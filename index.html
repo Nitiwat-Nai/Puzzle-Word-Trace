@@ -189,8 +189,6 @@
              cursor: default;
         }
         
-        /* ... (ส่วน CSS อื่นๆ ที่ไม่ได้มีการเปลี่ยนแปลงมากนัก) ... */
-
     </style>
 </head>
 <body>
@@ -198,7 +196,7 @@
     <div class="container" id="main-container">
         <header>
             <h1>Word Trace 👑</h1>
-            <span class="version-tag">Version 3.0: The Pharaoh's Trace</span>
+            <span class="version-tag">Version 3.1: The Pharaoh's Trace (Fixed)</span>
         </header>
 
         <div id="level-select-screen" class="screen active">
@@ -238,20 +236,18 @@
 
     <script>
         // --- DATA (Word Trace Questions) ---
-        // ฟังก์ชันสร้างตัวอักษรหลอก (Distractor) แบบสุ่ม
+        
         function getRandomDistractorChar() {
             const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
             return alphabet[Math.floor(Math.random() * alphabet.length)];
         }
 
-        // ฟังก์ชันสร้าง Tile Data โดยอัตโนมัติ (เพื่อลดความซับซ้อนของโค้ด)
         function generateTiles(word, minLength, gridSize) {
             const tiles = [];
             const tileCount = gridSize * gridSize;
             const wordChars = word.split('');
             const wordLength = word.length;
 
-            // 1. กำหนดตำแหน่งและ rotation สำหรับตัวอักษรในคำศัพท์ (Order > 0)
             const pathIndices = [];
             while(pathIndices.length < wordLength) {
                 const randomIndex = Math.floor(Math.random() * tileCount);
@@ -264,15 +260,13 @@
                 const charIndex = pathIndices.indexOf(i);
                 
                 if (charIndex !== -1) {
-                    // เป็นตัวอักษรในคำศัพท์
                     tiles.push({
                         char: wordChars[charIndex],
                         order: charIndex + 1,
-                        correctRotation: 0, // Simplified: assume 0 degrees is correct for all
-                        currentRotation: [0, 90, 180, 270][Math.floor(Math.random() * 4)] // สุ่มหมุนเริ่มต้น
+                        correctRotation: 0,
+                        currentRotation: [0, 90, 180, 270][Math.floor(Math.random() * 4)]
                     });
                 } else {
-                    // เป็นตัวอักษรหลอก
                     tiles.push({
                         char: getRandomDistractorChar(),
                         order: 0,
@@ -284,78 +278,211 @@
             return tiles;
         }
 
-        const level1Words = [
-            { correctWord: "CAT", thaiPrompt: "แมว", timeLimit: 12 },
-            { correctWord: "DOG", thaiPrompt: "สุนัข", timeLimit: 12 },
-            { correctWord: "SUN", thaiPrompt: "พระอาทิตย์", timeLimit: 12 },
-            { correctWord: "MOON", thaiPrompt: "พระจันทร์", timeLimit: 15 },
-            { correctWord: "FISH", thaiPrompt: "ปลา", timeLimit: 15 },
-            // Level 1: เลเวลย่อย 2
-            { correctWord: "TREE", thaiPrompt: "ต้นไม้", timeLimit: 12 },
-            { correctWord: "BIRD", thaiPrompt: "นก", timeLimit: 12 },
-            { correctWord: "BLUE", thaiPrompt: "สีน้ำเงิน", timeLimit: 15 },
-            { correctWord: "RED", thaiPrompt: "สีแดง", timeLimit: 12 },
-            { correctWord: "RICE", thaiPrompt: "ข้าว", timeLimit: 15 },
-            // Level 1: เลเวลย่อย 3
-            { correctWord: "BOOK", thaiPrompt: "หนังสือ", timeLimit: 15 },
-            { correctWord: "CAR", thaiPrompt: "รถยนต์", timeLimit: 12 },
-            { correctWord: "BUS", thaiPrompt: "รถประจำทาง", timeLimit: 12 },
-            { correctWord: "HOME", thaiPrompt: "บ้าน", timeLimit: 15 },
-            { correctWord: "BALL", thaiPrompt: "ลูกบอล", timeLimit: 15 },
-            // Level 1: เลเวลย่อย 4
-            { correctWord: "HAND", thaiPrompt: "มือ", timeLimit: 15 },
-            { correctWord: "FOOT", thaiPrompt: "เท้า", timeLimit: 15 },
-            { correctWord: "FARM", thaiPrompt: "ฟาร์ม", timeLimit: 15 },
-            { correctWord: "STAR", thaiPrompt: "ดาว", timeLimit: 15 },
-            { correctWord: "SHIP", thaiPrompt: "เรือ", timeLimit: 15 },
-            // Level 1: เลเวลย่อย 5
-            { correctWord: "RAIN", thaiPrompt: "ฝน", timeLimit: 15 },
-            { correctWord: "WIND", thaiPrompt: "ลม", timeLimit: 15 },
-            { correctWord: "ROAD", thaiPrompt: "ถนน", timeLimit: 15 },
-            { correctWord: "FIRE", thaiPrompt: "ไฟ", timeLimit: 15 },
-            { correctWord: "LAKE", thaiPrompt: "ทะเลสาบ", timeLimit: 15 },
-            // (คำศัพท์ที่เหลืออีก 25 คำสำหรับ Level 1 ถูกตัดออกเพื่อความกระชับ)
-        ];
+        // --- FIX 3: COMPLETE 150 WORDS LIST ---
+
+        const wordData = {
+            // Level 1: Beginner (3x3 Grid, 3-4 Letters) - 50 Words
+            level1Words: [
+                { correctWord: "CAT", thaiPrompt: "แมว", timeLimit: 12 },
+                { correctWord: "DOG", thaiPrompt: "สุนัข", timeLimit: 12 },
+                { correctWord: "SUN", thaiPrompt: "พระอาทิตย์", timeLimit: 12 },
+                { correctWord: "MOON", thaiPrompt: "พระจันทร์", timeLimit: 15 },
+                { correctWord: "FISH", thaiPrompt: "ปลา", timeLimit: 15 },
+                { correctWord: "TREE", thaiPrompt: "ต้นไม้", timeLimit: 12 },
+                { correctWord: "BIRD", thaiPrompt: "นก", timeLimit: 12 },
+                { correctWord: "BLUE", thaiPrompt: "สีน้ำเงิน", timeLimit: 15 },
+                { correctWord: "RED", thaiPrompt: "สีแดง", timeLimit: 12 },
+                { correctWord: "RICE", thaiPrompt: "ข้าว", timeLimit: 15 },
+                { correctWord: "BOOK", thaiPrompt: "หนังสือ", timeLimit: 15 },
+                { correctWord: "CAR", thaiPrompt: "รถยนต์", timeLimit: 12 },
+                { correctWord: "BUS", thaiPrompt: "รถประจำทาง", timeLimit: 12 },
+                { correctWord: "HOME", thaiPrompt: "บ้าน", timeLimit: 15 },
+                { correctWord: "BALL", thaiPrompt: "ลูกบอล", timeLimit: 15 },
+                { correctWord: "HAND", thaiPrompt: "มือ", timeLimit: 15 },
+                { correctWord: "FOOT", thaiPrompt: "เท้า", timeLimit: 15 },
+                { correctWord: "FARM", thaiPrompt: "ฟาร์ม", timeLimit: 15 },
+                { correctWord: "STAR", thaiPrompt: "ดาว", timeLimit: 15 },
+                { correctWord: "SHIP", thaiPrompt: "เรือ", timeLimit: 15 },
+                { correctWord: "RAIN", thaiPrompt: "ฝน", timeLimit: 15 },
+                { correctWord: "WIND", thaiPrompt: "ลม", timeLimit: 15 },
+                { correctWord: "ROAD", thaiPrompt: "ถนน", timeLimit: 15 },
+                { correctWord: "FIRE", thaiPrompt: "ไฟ", timeLimit: 15 },
+                { correctWord: "LAKE", thaiPrompt: "ทะเลสาบ", timeLimit: 15 },
+                // Added 25 more for L1 (Total 50)
+                { correctWord: "WANT", thaiPrompt: "ต้องการ", timeLimit: 15 },
+                { correctWord: "KNOW", thaiPrompt: "รู้", timeLimit: 12 },
+                { correctWord: "LOVE", thaiPrompt: "รัก", timeLimit: 12 },
+                { correctWord: "HELP", thaiPrompt: "ช่วยเหลือ", timeLimit: 15 },
+                { correctWord: "NAME", thaiPrompt: "ชื่อ", timeLimit: 12 },
+                { correctWord: "PLAY", thaiPrompt: "เล่น", timeLimit: 12 },
+                { correctWord: "SICK", thaiPrompt: "ป่วย", timeLimit: 15 },
+                { correctWord: "FAST", thaiPrompt: "เร็ว", timeLimit: 15 },
+                { correctWord: "SLOW", thaiPrompt: "ช้า", timeLimit: 15 },
+                { correctWord: "DARK", thaiPrompt: "มืด", timeLimit: 12 },
+                { correctWord: "LIGHT", thaiPrompt: "แสง", timeLimit: 15 },
+                { correctWord: "OPEN", thaiPrompt: "เปิด", timeLimit: 12 },
+                { correctWord: "STOP", thaiPrompt: "หยุด", timeLimit: 12 },
+                { correctWord: "WALK", thaiPrompt: "เดิน", timeLimit: 15 },
+                { correctWord: "TALK", thaiPrompt: "พูด", timeLimit: 12 },
+                { correctWord: "GATE", thaiPrompt: "ประตู", timeLimit: 15 },
+                { correctWord: "FOOD", thaiPrompt: "อาหาร", timeLimit: 15 },
+                { correctWord: "DRINK", thaiPrompt: "เครื่องดื่ม", timeLimit: 15 },
+                { correctWord: "EARS", thaiPrompt: "หู", timeLimit: 12 },
+                { correctWord: "EYE", thaiPrompt: "ตา", timeLimit: 12 },
+                { correctWord: "SING", thaiPrompt: "ร้องเพลง", timeLimit: 15 },
+                { correctWord: "JUMP", thaiPrompt: "กระโดด", timeLimit: 15 },
+                { correctWord: "BELL", thaiPrompt: "ระฆัง", timeLimit: 12 },
+                { correctWord: "KING", thaiPrompt: "พระราชา", timeLimit: 12 },
+                { correctWord: "DOOR", thaiPrompt: "ประตู", timeLimit: 15 }
+            ],
+
+            // Level 2: Intermediate (4x4 Grid, 5-6 Letters) - 50 Words
+            level2Words: [
+                { correctWord: "APPLE", thaiPrompt: "แอปเปิ้ล", timeLimit: 18 },
+                { correctWord: "PEACH", thaiPrompt: "ลูกพีช", timeLimit: 18 },
+                { correctWord: "TIGER", thaiPrompt: "เสือ", timeLimit: 18 },
+                { correctWord: "CHAIR", thaiPrompt: "เก้าอี้", timeLimit: 18 },
+                { correctWord: "YELLOW", thaiPrompt: "สีเหลือง", timeLimit: 20 },
+                // Added 45 more for L2 (Total 50)
+                { correctWord: "SLEEP", thaiPrompt: "นอนหลับ", timeLimit: 18 },
+                { correctWord: "FAMILY", thaiPrompt: "ครอบครัว", timeLimit: 20 },
+                { correctWord: "BROTHER", thaiPrompt: "พี่ชาย/น้องชาย", timeLimit: 20 },
+                { correctWord: "SISTER", thaiPrompt: "พี่สาว/น้องสาว", timeLimit: 20 },
+                { correctWord: "FRIEND", thaiPrompt: "เพื่อน", timeLimit: 18 },
+                { correctWord: "SCHOOL", thaiPrompt: "โรงเรียน", timeLimit: 20 },
+                { correctWord: "STUDY", thaiPrompt: "เรียน", timeLimit: 18 },
+                { correctWord: "TEACH", thaiPrompt: "สอน", timeLimit: 18 },
+                { correctWord: "WRITER", thaiPrompt: "นักเขียน", timeLimit: 20 },
+                { correctWord: "GARDEN", thaiPrompt: "สวน", timeLimit: 20 },
+                { correctWord: "FLOWER", thaiPrompt: "ดอกไม้", timeLimit: 20 },
+                { correctWord: "WATER", thaiPrompt: "น้ำ", timeLimit: 18 },
+                { correctWord: "OCEAN", thaiPrompt: "มหาสมุทร", timeLimit: 18 },
+                { correctWord: "MOUNTAIN", thaiPrompt: "ภูเขา", timeLimit: 20 },
+                { correctWord: "STREET", thaiPrompt: "ถนน", timeLimit: 18 },
+                { correctWord: "BUILD", thaiPrompt: "สร้าง", timeLimit: 18 },
+                { correctWord: "TRAVEL", thaiPrompt: "เดินทาง", timeLimit: 20 },
+                { correctWord: "EATING", thaiPrompt: "กำลังกิน", timeLimit: 20 },
+                { correctWord: "SMART", thaiPrompt: "ฉลาด", timeLimit: 18 },
+                { correctWord: "CLEVER", thaiPrompt: "เก่ง", timeLimit: 18 },
+                { correctWord: "HAPPY", thaiPrompt: "มีความสุข", timeLimit: 20 },
+                { correctWord: "SMILE", thaiPrompt: "ยิ้ม", timeLimit: 18 },
+                { correctWord: "DANCE", thaiPrompt: "เต้นรำ", timeLimit: 18 },
+                { correctWord: "CLOUDY", thaiPrompt: "มีเมฆมาก", timeLimit: 20 },
+                { correctWord: "WINTER", thaiPrompt: "ฤดูหนาว", timeLimit: 20 },
+                { correctWord: "SUMMER", thaiPrompt: "ฤดูร้อน", timeLimit: 20 },
+                { correctWord: "SPRING", thaiPrompt: "ฤดูใบไม้ผลิ", timeLimit: 20 },
+                { correctWord: "AUTUMN", thaiPrompt: "ฤดูใบไม้ร่วง", timeLimit: 20 },
+                { correctWord: "CHICKEN", thaiPrompt: "ไก่", timeLimit: 20 },
+                { correctWord: "BUTTER", thaiPrompt: "เนย", timeLimit: 20 },
+                { correctWord: "CHEESE", thaiPrompt: "เนยแข็ง", timeLimit: 20 },
+                { correctWord: "SUGAR", thaiPrompt: "น้ำตาล", timeLimit: 20 },
+                { correctWord: "SALT", thaiPrompt: "เกลือ", timeLimit: 18 },
+                { correctWord: "PIRATE", thaiPrompt: "โจรสลัด", timeLimit: 20 },
+                { correctWord: "POLICE", thaiPrompt: "ตำรวจ", timeLimit: 20 },
+                { correctWord: "DOCTOR", thaiPrompt: "หมอ", timeLimit: 18 },
+                { correctWord: "NURSE", thaiPrompt: "พยาบาล", timeLimit: 18 },
+                { correctWord: "ENGINE", thaiPrompt: "เครื่องยนต์", timeLimit: 20 },
+                { correctWord: "TICKET", thaiPrompt: "ตั๋ว", timeLimit: 20 },
+                { correctWord: "PLANET", thaiPrompt: "ดาวเคราะห์", timeLimit: 20 },
+                { correctWord: "FUTURE", thaiPrompt: "อนาคต", timeLimit: 20 },
+                { correctWord: "MOMENT", thaiPrompt: "ชั่วขณะ", timeLimit: 20 },
+                { correctWord: "PERSON", thaiPrompt: "บุคคล", timeLimit: 20 },
+                { correctWord: "PEOPLE", thaiPrompt: "ผู้คน", timeLimit: 20 },
+                { correctWord: "SYSTEM", thaiPrompt: "ระบบ", timeLimit: 20 }
+            ],
+
+            // Level 3: Advanced (5x5/6x6 Grid, 7-10+ Letters) - 50 Words
+            level3Words: [
+                { correctWord: "ELEPHANT", thaiPrompt: "ช้าง", timeLimit: 25 },
+                { correctWord: "COMPUTER", thaiPrompt: "คอมพิวเตอร์", timeLimit: 25 },
+                { correctWord: "LIBRARY", thaiPrompt: "ห้องสมุด", timeLimit: 22 },
+                { correctWord: "UNIVERSITY", thaiPrompt: "มหาวิทยาลัย", timeLimit: 30 },
+                // Added 46 more for L3 (Total 50)
+                { correctWord: "WEATHER", thaiPrompt: "สภาพอากาศ", timeLimit: 25 },
+                { correctWord: "HOSPITAL", thaiPrompt: "โรงพยาบาล", timeLimit: 25 },
+                { correctWord: "BUILDING", thaiPrompt: "อาคาร", timeLimit: 22 },
+                { correctWord: "MAGAZINE", thaiPrompt: "นิตยสาร", timeLimit: 25 },
+                { correctWord: "HOLIDAY", thaiPrompt: "วันหยุด", timeLimit: 22 },
+                { correctWord: "VACATION", thaiPrompt: "การพักผ่อน", timeLimit: 25 },
+                { correctWord: "BEAUTIFUL", thaiPrompt: "สวยงาม", timeLimit: 30 },
+                { correctWord: "DIFFICULT", thaiPrompt: "ยาก", timeLimit: 25 },
+                { correctWord: "INTEREST", thaiPrompt: "น่าสนใจ", timeLimit: 25 },
+                { correctWord: "EXCELLENT", thaiPrompt: "ยอดเยี่ยม", timeLimit: 25 },
+                { correctWord: "COMPLETE", thaiPrompt: "เสร็จสมบูรณ์", timeLimit: 25 },
+                { correctWord: "TOGETHER", thaiPrompt: "ด้วยกัน", timeLimit: 25 },
+                { correctWord: "LANGUAGE", thaiPrompt: "ภาษา", timeLimit: 25 },
+                { correctWord: "HISTORY", thaiPrompt: "ประวัติศาสตร์", timeLimit: 30 },
+                { correctWord: "SCIENCE", thaiPrompt: "วิทยาศาสตร์", timeLimit: 25 },
+                { correctWord: "MATHEMATICS", thaiPrompt: "คณิตศาสตร์", timeLimit: 30 },
+                { correctWord: "GEOGRAPHY", thaiPrompt: "ภูมิศาสตร์", timeLimit: 30 },
+                { correctWord: "TECHNOLOGY", thaiPrompt: "เทคโนโลยี", timeLimit: 30 },
+                { correctWord: "TELEPHONE", thaiPrompt: "โทรศัพท์", timeLimit: 25 },
+                { correctWord: "INTERNET", thaiPrompt: "อินเทอร์เน็ต", timeLimit: 25 },
+                { correctWord: "COMMUNITY", thaiPrompt: "ชุมชน", timeLimit: 25 },
+                { correctWord: "DIRECTION", thaiPrompt: "ทิศทาง", timeLimit: 25 },
+                { correctWord: "SOLUTION", thaiPrompt: "วิธีแก้ปัญหา", timeLimit: 25 },
+                { correctWord: "QUESTION", thaiPrompt: "คำถาม", timeLimit: 25 },
+                { correctWord: "ANSWER", thaiPrompt: "คำตอบ", timeLimit: 25 },
+                { correctWord: "MATERIAL", thaiPrompt: "วัสดุ", timeLimit: 25 },
+                { correctWord: "ACTIVITY", thaiPrompt: "กิจกรรม", timeLimit: 25 },
+                { correctWord: "POSITION", thaiPrompt: "ตำแหน่ง", timeLimit: 25 },
+                { correctWord: "GOVERNMENT", thaiPrompt: "รัฐบาล", timeLimit: 30 },
+                { correctWord: "PRESIDENT", thaiPrompt: "ประธานาธิบดี", timeLimit: 30 },
+                { correctWord: "MINISTER", thaiPrompt: "รัฐมนตรี", timeLimit: 25 },
+                { correctWord: "BUSINESS", thaiPrompt: "ธุรกิจ", timeLimit: 25 },
+                { correctWord: "INDUSTRY", thaiPrompt: "อุตสาหกรรม", timeLimit: 30 },
+                { correctWord: "CUSTOMER", thaiPrompt: "ลูกค้า", timeLimit: 25 },
+                { correctWord: "DEVELOPER", thaiPrompt: "นักพัฒนา", timeLimit: 25 },
+                { correctWord: "PROGRAMMER", thaiPrompt: "โปรแกรมเมอร์", timeLimit: 30 },
+                { correctWord: "ADVENTURE", thaiPrompt: "การผจญภัย", timeLimit: 30 },
+                { correctWord: "TRADITION", thaiPrompt: "ประเพณี", timeLimit: 25 },
+                { correctWord: "CULTURE", thaiPrompt: "วัฒนธรรม", timeLimit: 25 },
+                { correctWord: "POPULAR", thaiPrompt: "เป็นที่นิยม", timeLimit: 25 },
+                { correctWord: "SURPRISE", thaiPrompt: "ประหลาดใจ", timeLimit: 25 },
+                { correctWord: "CREATIVE", thaiPrompt: "สร้างสรรค์", timeLimit: 25 },
+                { correctWord: "DIAMOND", thaiPrompt: "เพชร", timeLimit: 25 },
+                { correctWord: "TREASURE", thaiPrompt: "สมบัติ", timeLimit: 25 },
+                { correctWord: "EXPLORER", thaiPrompt: "นักสำรวจ", timeLimit: 25 },
+                { correctWord: "PHARAOH", thaiPrompt: "ฟาโรห์", timeLimit: 25 },
+                { correctWord: "PYRAMID", thaiPrompt: "พีระมิด", timeLimit: 25 },
+                { correctWord: "MYSTERY", thaiPrompt: "ความลึกลับ", timeLimit: 25 },
+                { correctWord: "ANCIENT", thaiPrompt: "โบราณ", timeLimit: 25 }
+            ]
+        };
         
-        // สร้างชุดคำถามโดยใช้ฟังก์ชันอัตโนมัติ
-        const level1Questions = level1Words.map(q => ({
-            ...q,
-            tiles: generateTiles(q.correctWord, q.correctWord.length, 3)
+        // Map word lists to full question objects
+        const level1Questions = wordData.level1Words.map(q => ({
+            ...q, tiles: generateTiles(q.correctWord, q.correctWord.length, 3)
         }));
+        const level2Questions = wordData.level2Words.map(q => ({
+            ...q, tiles: generateTiles(q.correctWord, q.correctWord.length, 4)
+        }));
+        const level3Questions = wordData.level3Words.map(q => {
+            const gridSize = q.correctWord.length > 9 ? 6 : 5; // Use 6x6 for very long words
+            return {
+                ...q, tiles: generateTiles(q.correctWord, q.correctWord.length, gridSize), gridSize: gridSize
+            };
+        });
+
 
         const allQuizData = [
             { 
                 level: 1, 
                 title: "Beginner (3x3 Grid, 3-4 Letters) - 50 Words", 
                 gridSize: 3, 
-                questions: level1Questions // 25 คำแรก
+                questions: level1Questions
             },
             { 
                 level: 2, 
                 title: "Intermediate (4x4 Grid, 5-6 Letters) - 50 Words", 
                 gridSize: 4, 
-                questions: [
-                    // Placeholder for 50 words
-                    { correctWord: "APPLE", thaiPrompt: "แอปเปิ้ล", timeLimit: 18, tiles: generateTiles("APPLE", 5, 4) },
-                    { correctWord: "PEACH", thaiPrompt: "ลูกพีช", timeLimit: 18, tiles: generateTiles("PEACH", 5, 4) },
-                    { correctWord: "TIGER", thaiPrompt: "เสือ", timeLimit: 18, tiles: generateTiles("TIGER", 5, 4) },
-                    { correctWord: "CHAIR", thaiPrompt: "เก้าอี้", timeLimit: 18, tiles: generateTiles("CHAIR", 5, 4) },
-                    { correctWord: "YELLOW", thaiPrompt: "สีเหลือง", timeLimit: 20, tiles: generateTiles("YELLOW", 6, 4) },
-                    // ... 45 คำที่เหลือจะถูกเพิ่มตรงนี้ ...
-                ]
+                questions: level2Questions
             },
             { 
                 level: 3, 
                 title: "Advanced (5x5/6x6 Grid, 7-10+ Letters) - 50 Words", 
-                gridSize: 5, // ใช้ 5x5 สำหรับคำส่วนใหญ่ และ 6x6 สำหรับคำยาวมาก (ต้องปรับ dynamic)
-                questions: [
-                    // Placeholder for 50 words
-                    { correctWord: "ELEPHANT", thaiPrompt: "ช้าง", timeLimit: 25, tiles: generateTiles("ELEPHANT", 8, 5) },
-                    { correctWord: "COMPUTER", thaiPrompt: "คอมพิวเตอร์", timeLimit: 25, tiles: generateTiles("COMPUTER", 8, 5) },
-                    { correctWord: "LIBRARY", thaiPrompt: "ห้องสมุด", timeLimit: 22, tiles: generateTiles("LIBRARY", 7, 5) },
-                    { correctWord: "UNIVERSITY", thaiPrompt: "มหาวิทยาลัย", timeLimit: 30, tiles: generateTiles("UNIVERSITY", 10, 6) },
-                    // ... 46 คำที่เหลือจะถูกเพิ่มตรงนี้ ...
-                ]
+                gridSize: 5, 
+                questions: level3Questions
             }
         ];
 
@@ -392,11 +519,10 @@
                 utterance.volume = 1; 
                 utterance.rate = 1;
                 utterance.pitch = 1;
-                // ลบ Logic การเปลี่ยนข้อถัดไป (onend) ออกจากที่นี่ เพื่อป้องกันการชนกัน
             }
         }
         
-        function speak(text, lang, onEndCallback = null) { // เพิ่ม onEndCallback
+        function speak(text, lang, onEndCallback = null) {
             if (utterance) {
                 window.speechSynthesis.cancel(); 
                 utterance.text = text;
@@ -404,39 +530,34 @@
                 
                 const voices = window.speechSynthesis.getVoices();
                 if (lang === 'en-US' || lang === 'en-GB') {
-                    // ใช้ startsWith เพื่อความยืดหยุ่นในการหา Voice
                     utterance.voice = voices.find(v => v.lang.startsWith('en-')); 
                 } else if (lang === 'th-TH') {
                     utterance.voice = voices.find(v => v.lang.startsWith('th-'));
                 }
                 
-                // กำหนด onend ให้เป็น callback ที่ส่งเข้ามา
                 utterance.onend = onEndCallback;
 
                 window.speechSynthesis.speak(utterance);
             }
         }
         
+        // FIX 1: Changed delay to 0.5s (500ms)
         function speakAnswer(englishWord, thaiMeaning) {
             
-            // 1. Logic สุดท้าย: เมื่อพูดภาษาไทยจบ จะเปลี่ยนไปข้อถัดไป
             const onThaiSpeakEnd = () => {
-                 utterance.onend = null; // ป้องกันการทำงานซ้ำซ้อน
+                 utterance.onend = null; 
                  setTimeout(() => {
                      if (!nextBtn.disabled) { 
                          currentQuizIndex++;
                          nextQuestion(); // ไปข้อถัดไปอัตโนมัติ
                      }
-                 }, 1000); 
+                 }, 500); // 0.5 วินาที
             };
             
-            // 2. Logic กลาง: เมื่อพูดภาษาอังกฤษจบ จะพูดภาษาไทยต่อ
             const onEnglishSpeakEnd = () => {
-                 // พูดภาษาไทย และกำหนดให้ onThaiSpeakEnd ทำงานเมื่อจบ
                  speak(thaiMeaning, 'th-TH', onThaiSpeakEnd);
             };
 
-            // 3. เริ่มต้น: พูดภาษาอังกฤษ และกำหนดให้ onEnglishSpeakEnd ทำงานเมื่อจบ
             speak(englishWord, 'en-US', onEnglishSpeakEnd);
         }
 
@@ -452,12 +573,11 @@
 
         function updateStatusBar() {
             levelTitleEl.textContent = `Level ${currentLevelData.level}: ${currentLevelData.title.split(' ')[0]}`;
-            // Q Count now shows the full 50 questions
             qCountEl.textContent = `ข้อ: ${currentQuizIndex + 1}/${currentLevelData.questions.length}`; 
             scoreEl.textContent = `คะแนน: ${score}`;
         }
         
-        // --- TIMER LOGIC (Same as V2.0) ---
+        // --- TIMER LOGIC ---
         function startTimer(duration) {
             clearInterval(timerInterval);
             totalTime = duration;
@@ -470,7 +590,7 @@
                 if (timeRemaining <= 0) {
                     timeRemaining = 0;
                     clearInterval(timerInterval);
-                    checkFlow(true); 
+                    checkFlow(true); // timeUp = true
                 }
                 updateTimerBar();
             }, 100);
@@ -491,8 +611,9 @@
             }
         }
         
-        // --- GAME GRID LOGIC (Same as V2.0) ---
+        // --- GAME GRID LOGIC ---
         
+        // FIX 2: Synchronize rotation data
         function handleTileClick(event) {
             if (!isGameActive || isAnswered) return;
 
@@ -502,6 +623,10 @@
             currentRot = (currentRot + 90) % 360; 
             tileEl.setAttribute('data-rotation', currentRot);
             tileEl.querySelector('.tile-char-wrapper').style.setProperty('--rotation', `${currentRot}deg`);
+
+            // FIX 2: Synchronize rotation data with the state
+            const index = parseInt(tileEl.getAttribute('data-index'));
+            currentLevelData.questions[currentQuizIndex].tiles[index].currentRotation = currentRot;
 
             checkFlow();
         }
@@ -530,6 +655,23 @@
             });
         }
         
+        // FIX 1 Helper: Show correct answer when time is up
+        function highlightCorrectAnswer(tilesData) {
+            const allTiles = gameGridEl.querySelectorAll('.tile');
+            allTiles.forEach((tileEl, index) => {
+                const order = parseInt(tileEl.getAttribute('data-order'));
+                if (order > 0) {
+                    // 1. Highlight the tile
+                    tileEl.classList.add('correct');
+                    // 2. Force rotate to the correct position (0 degrees)
+                    tileEl.setAttribute('data-rotation', 0);
+                    tileEl.querySelector('.tile-char-wrapper').style.setProperty('--rotation', `0deg`);
+                    // 3. Update the data structure for consistency
+                    tilesData[index].currentRotation = 0;
+                }
+            });
+        }
+
         function checkFlow(timeUp = false) {
             if (isAnswered) return;
 
@@ -541,7 +683,7 @@
                 const order = parseInt(tileEl.getAttribute('data-order'));
                 if (order > 0) {
                     const currentRot = parseInt(tileEl.getAttribute('data-rotation'));
-                    const correctRot = q.tiles[index].correctRotation;
+                    const correctRot = q.tiles[index].correctRotation; // Always 0
                     
                     if (currentRot === correctRot) {
                         correctTiles++;
@@ -562,6 +704,10 @@
                 isAnswered = true;
                 messageAreaEl.textContent = `⏰ หมดเวลา! คำศัพท์คือ ${q.correctWord}`;
                 messageAreaEl.style.color = 'var(--color-wrong)';
+                
+                // FIX 1: Show the answer and highlight the tiles
+                highlightCorrectAnswer(q.tiles);
+                
                 endQuestion(false);
             }
         }
@@ -570,7 +716,6 @@
 
         function createLevelButtons() {
              levelGridSelectEl.innerHTML = '';
-            // Group the 50 questions into 10 groups of 5 for display
             const levelData = allQuizData.map(data => ({
                 ...data,
                 subLevels: Array.from({ length: 10 }, (_, i) => ({
@@ -588,7 +733,7 @@
                     
                     const titleSpan = document.createElement('span');
                     titleSpan.className = 'level-btn-title';
-                    titleSpan.textContent = subLevel.title.replace('ชุดที่', 'Level'); // Display fix
+                    titleSpan.textContent = subLevel.title.replace('ชุดที่', 'Level'); 
                     
                     btn.appendChild(titleSpan);
                     btn.setAttribute('data-level-id', subLevel.id);
@@ -631,9 +776,11 @@
             updateStatusBar();
             const q = currentLevelData.questions[currentQuizIndex];
             
-            // Adjust grid size dynamically for Level 3 or specific long words
             let gridSize = currentLevelData.gridSize;
-            if (q.correctWord.length > 9) { // Example for very long words
+            // Use specific gridSize if it was defined in level3Questions (e.g., for 6x6)
+            if (q.gridSize) { 
+                gridSize = q.gridSize;
+            } else if (currentLevelData.level === 3 && q.correctWord.length > 9) {
                 gridSize = 6;
             }
 
@@ -656,7 +803,7 @@
             
             englishWordDisplayEl.textContent = `${q.correctWord} (${q.thaiPrompt})`;
             
-            // เรียก speakAnswer ที่ได้รับการแก้ไขแล้ว ซึ่งจะเปลี่ยนข้อเองอัตโนมัติ
+            // speakAnswer จะจัดการการพูดและการเปลี่ยนข้อถัดไปโดยอัตโนมัติ
             speakAnswer(q.correctWord, q.thaiPrompt);
         }
 
@@ -671,12 +818,14 @@
             nextBtn.textContent = 'กลับหน้าหลัก (Level Selection)';
             nextBtn.disabled = false;
             
-            // เมื่อจบเกม ปุ่ม Next ควรกลับไปหน้าหลัก
+            // ตั้งค่า Event Handler สำหรับกลับหน้าหลัก
             nextBtn.onclick = () => {
                 window.speechSynthesis.cancel();
                 showScreen('level-select-screen');
                 nextBtn.textContent = 'ข้อถัดไป ⏭️/กลับหน้าหลัก';
-                nextBtn.onclick = null; // Reset click handler
+                // ล้าง onclick handler เดิม
+                nextBtn.onclick = null; 
+                // Restore the original event listener (which is handled in DOMContentLoaded)
             };
         }
 
@@ -686,15 +835,15 @@
             createLevelButtons();
             showScreen('level-select-screen');
 
-            // เพิ่ม event listener ให้กับ nextBtn สำหรับการกดด้วยตนเอง
+            // Event listener สำหรับการกดปุ่มข้อถัดไปเอง (Manual Next)
             nextBtn.addEventListener('click', () => {
-                 // ตรวจสอบว่าอยู่ในสถานะจบเกมหรือไม่
+                 // ถ้าปุ่มเปลี่ยนเป็น 'กลับหน้าหลัก' ให้ทำตาม Logic ใน endGame()
                  if (nextBtn.textContent.includes('กลับหน้าหลัก')) {
-                     // Logic ถูกย้ายไปอยู่ใน endGame() แล้ว
+                     // The logic is already handled by nextBtn.onclick set in endGame()
                      return;
                  }
 
-                 // ถ้าไม่ได้จบเกม (ผู้เล่นกดข้ามก่อนระบบพูดจบ)
+                 // ถ้าผู้เล่นกดเองในขณะที่เฉลยอยู่
                  if (isAnswered) {
                      window.speechSynthesis.cancel();
                      currentQuizIndex++;
