@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Word Trace 3.0: The Pharaoh's Trace 👑</title>
+    <title>Word Trace 3.0: The Pharaoh's Trace 👑 (Fixed)</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         /* Global & Pharaoh Theme */
@@ -238,10 +238,6 @@
 
     <script>
         // --- DATA (Word Trace Questions) ---
-        // คำศัพท์ใหม่ 50 คำสำหรับ Level 1 (10 เลเวลย่อย x 5 คำ)
-        // **ต้องกำหนด tile array สำหรับแต่ละคำ (Char, Order, Rotation) ซึ่งยาวมาก**
-        // ผมจะสร้างโครงสร้างข้อมูลคำศัพท์ใหม่ 20 คำแรกเป็นตัวอย่างที่ใช้งานได้จริง
-        
         // ฟังก์ชันสร้างตัวอักษรหลอก (Distractor) แบบสุ่ม
         function getRandomDistractorChar() {
             const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -389,27 +385,18 @@
         let totalPathTiles = 0;
         let utterance = null; 
 
-        // --- TTS & UTILITY FUNCTIONS (Same as V2.0) ---
+        // --- TTS & UTILITY FUNCTIONS (REVISED) ---
         function setupSpeech() {
             if ('speechSynthesis' in window) {
                 utterance = new SpeechSynthesisUtterance();
                 utterance.volume = 1; 
                 utterance.rate = 1;
                 utterance.pitch = 1;
-                utterance.onend = () => {
-                     if (utterance.lang === 'th-TH') {
-                         setTimeout(() => {
-                             if (!nextBtn.disabled) { 
-                                 currentQuizIndex++;
-                                 nextQuestion();
-                             }
-                         }, 1000); 
-                     }
-                };
+                // ลบ Logic การเปลี่ยนข้อถัดไป (onend) ออกจากที่นี่ เพื่อป้องกันการชนกัน
             }
         }
         
-        function speak(text, lang) {
+        function speak(text, lang, onEndCallback = null) { // เพิ่ม onEndCallback
             if (utterance) {
                 window.speechSynthesis.cancel(); 
                 utterance.text = text;
@@ -417,23 +404,40 @@
                 
                 const voices = window.speechSynthesis.getVoices();
                 if (lang === 'en-US' || lang === 'en-GB') {
-                    utterance.voice = voices.find(v => v.lang === 'en-US' || v.lang === 'en-GB');
+                    // ใช้ startsWith เพื่อความยืดหยุ่นในการหา Voice
+                    utterance.voice = voices.find(v => v.lang.startsWith('en-')); 
                 } else if (lang === 'th-TH') {
-                    utterance.voice = voices.find(v => v.lang === 'th-TH');
+                    utterance.voice = voices.find(v => v.lang.startsWith('th-'));
                 }
+                
+                // กำหนด onend ให้เป็น callback ที่ส่งเข้ามา
+                utterance.onend = onEndCallback;
 
                 window.speechSynthesis.speak(utterance);
             }
         }
         
         function speakAnswer(englishWord, thaiMeaning) {
-            // 1. Speak English Word
-            speak(englishWord, 'en-US'); 
             
-            // 2. Speak Thai Meaning after English word finishes
-            utterance.onend = () => {
-                 speak(thaiMeaning, 'th-TH');
+            // 1. Logic สุดท้าย: เมื่อพูดภาษาไทยจบ จะเปลี่ยนไปข้อถัดไป
+            const onThaiSpeakEnd = () => {
+                 utterance.onend = null; // ป้องกันการทำงานซ้ำซ้อน
+                 setTimeout(() => {
+                     if (!nextBtn.disabled) { 
+                         currentQuizIndex++;
+                         nextQuestion(); // ไปข้อถัดไปอัตโนมัติ
+                     }
+                 }, 1000); 
             };
+            
+            // 2. Logic กลาง: เมื่อพูดภาษาอังกฤษจบ จะพูดภาษาไทยต่อ
+            const onEnglishSpeakEnd = () => {
+                 // พูดภาษาไทย และกำหนดให้ onThaiSpeakEnd ทำงานเมื่อจบ
+                 speak(thaiMeaning, 'th-TH', onThaiSpeakEnd);
+            };
+
+            // 3. เริ่มต้น: พูดภาษาอังกฤษ และกำหนดให้ onEnglishSpeakEnd ทำงานเมื่อจบ
+            speak(englishWord, 'en-US', onEnglishSpeakEnd);
         }
 
         // --- UI & SCREEN MANAGEMENT ---
@@ -652,6 +656,7 @@
             
             englishWordDisplayEl.textContent = `${q.correctWord} (${q.thaiPrompt})`;
             
+            // เรียก speakAnswer ที่ได้รับการแก้ไขแล้ว ซึ่งจะเปลี่ยนข้อเองอัตโนมัติ
             speakAnswer(q.correctWord, q.thaiPrompt);
         }
 
@@ -665,6 +670,14 @@
 
             nextBtn.textContent = 'กลับหน้าหลัก (Level Selection)';
             nextBtn.disabled = false;
+            
+            // เมื่อจบเกม ปุ่ม Next ควรกลับไปหน้าหลัก
+            nextBtn.onclick = () => {
+                window.speechSynthesis.cancel();
+                showScreen('level-select-screen');
+                nextBtn.textContent = 'ข้อถัดไป ⏭️/กลับหน้าหลัก';
+                nextBtn.onclick = null; // Reset click handler
+            };
         }
 
         // --- INITIAL SETUP ---
@@ -672,6 +685,22 @@
             setupSpeech();
             createLevelButtons();
             showScreen('level-select-screen');
+
+            // เพิ่ม event listener ให้กับ nextBtn สำหรับการกดด้วยตนเอง
+            nextBtn.addEventListener('click', () => {
+                 // ตรวจสอบว่าอยู่ในสถานะจบเกมหรือไม่
+                 if (nextBtn.textContent.includes('กลับหน้าหลัก')) {
+                     // Logic ถูกย้ายไปอยู่ใน endGame() แล้ว
+                     return;
+                 }
+
+                 // ถ้าไม่ได้จบเกม (ผู้เล่นกดข้ามก่อนระบบพูดจบ)
+                 if (isAnswered) {
+                     window.speechSynthesis.cancel();
+                     currentQuizIndex++;
+                     nextQuestion();
+                 }
+            });
         });
     </script>
 </body>
