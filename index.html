@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Word Trace 4.0: Sequential Spelling 👑</title>
+    <title>Word Trace 4.0: Sequential Spelling 👑 (Final Fix)</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         /* Global & Pharaoh Theme */
@@ -98,6 +98,8 @@
             font-weight: bold;
             cursor: pointer;
             transition: transform 0.1s, box-shadow 0.1s;
+            /* Default shadow */
+            box-shadow: 0 4px 0 #AAA; 
         }
         
         /* L1 Yellow */
@@ -119,7 +121,7 @@
 
         .level-btn:active {
             transform: translateY(2px);
-            box-shadow: none; /* Shadow handled by specific level CSS above */
+            box-shadow: none; 
         }
         .level-btn[data-level='1']:active { box-shadow: 0 2px 0 #FFB300; }
         .level-btn[data-level='2']:active { box-shadow: 0 2px 0 #F57C00; }
@@ -230,7 +232,7 @@
     <div class="container" id="main-container">
         <header>
             <h1>Word Trace 👑</h1>
-            <span class="version-tag">Version 4.0: Sequential Spelling</span>
+            <span class="version-tag">Version 4.0: Sequential Spelling (Final)</span>
         </header>
 
         <div id="level-select-screen" class="screen active">
@@ -271,7 +273,7 @@
     <script>
         // --- DATA (Word Trace Questions) ---
         
-        // FIX 1: Ensure distractor characters are not in the target word
+        // Ensure distractor characters are not in the target word
         function getRandomDistractorChar(excludeChars = []) {
             const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
             const availableChars = alphabet.split('').filter(char => !excludeChars.includes(char));
@@ -284,7 +286,7 @@
             const tiles = [];
             const tileCount = gridSize * gridSize;
             const wordChars = word.split('');
-            // FIX 1: Characters to exclude from distractors
+            const wordLength = word.length;
             const excludeChars = [...new Set(wordChars)]; 
 
             const pathIndices = [];
@@ -299,13 +301,11 @@
                 const charIndex = pathIndices.indexOf(i);
                 
                 if (charIndex !== -1) {
-                    // Correct character
                     tiles.push({
                         char: wordChars[charIndex],
                         order: charIndex + 1,
                     });
                 } else {
-                    // Distractor character (not in word)
                     tiles.push({
                         char: getRandomDistractorChar(excludeChars),
                         order: 0,
@@ -315,172 +315,49 @@
             return tiles;
         }
 
-        // --- FIX 3: COMPLETE 150 WORDS LIST (Retained from previous version) ---
+        // --- COMPLETE 150 WORDS LIST ---
 
         const wordData = {
             // Level 1: Beginner (3x3 Grid, 3-4 Letters) - 50 Words
             level1Words: [
-                { correctWord: "CAT", thaiPrompt: "แมว", timeLimit: 12 },
-                { correctWord: "DOG", thaiPrompt: "สุนัข", timeLimit: 12 },
-                { correctWord: "SUN", thaiPrompt: "พระอาทิตย์", timeLimit: 12 },
-                { correctWord: "MOON", thaiPrompt: "พระจันทร์", timeLimit: 15 },
-                { correctWord: "FISH", thaiPrompt: "ปลา", timeLimit: 15 },
-                { correctWord: "TREE", thaiPrompt: "ต้นไม้", timeLimit: 12 },
-                { correctWord: "BIRD", thaiPrompt: "นก", timeLimit: 12 },
-                { correctWord: "BLUE", thaiPrompt: "สีน้ำเงิน", timeLimit: 15 },
-                { correctWord: "RED", thaiPrompt: "สีแดง", timeLimit: 12 },
-                { correctWord: "RICE", thaiPrompt: "ข้าว", timeLimit: 15 },
-                { correctWord: "BOOK", thaiPrompt: "หนังสือ", timeLimit: 15 },
-                { correctWord: "CAR", thaiPrompt: "รถยนต์", timeLimit: 12 },
-                { correctWord: "BUS", thaiPrompt: "รถประจำทาง", timeLimit: 12 },
-                { correctWord: "HOME", thaiPrompt: "บ้าน", timeLimit: 15 },
-                { correctWord: "BALL", thaiPrompt: "ลูกบอล", timeLimit: 15 },
-                { correctWord: "HAND", thaiPrompt: "มือ", timeLimit: 15 },
-                { correctWord: "FOOT", thaiPrompt: "เท้า", timeLimit: 15 },
-                { correctWord: "FARM", thaiPrompt: "ฟาร์ม", timeLimit: 15 },
-                { correctWord: "STAR", thaiPrompt: "ดาว", timeLimit: 15 },
-                { correctWord: "SHIP", thaiPrompt: "เรือ", timeLimit: 15 },
-                { correctWord: "RAIN", thaiPrompt: "ฝน", timeLimit: 15 },
-                { correctWord: "WIND", thaiPrompt: "ลม", timeLimit: 15 },
-                { correctWord: "ROAD", thaiPrompt: "ถนน", timeLimit: 15 },
-                { correctWord: "FIRE", thaiPrompt: "ไฟ", timeLimit: 15 },
-                { correctWord: "LAKE", thaiPrompt: "ทะเลสาบ", timeLimit: 15 },
-                { correctWord: "WANT", thaiPrompt: "ต้องการ", timeLimit: 15 },
-                { correctWord: "KNOW", thaiPrompt: "รู้", timeLimit: 12 },
-                { correctWord: "LOVE", thaiPrompt: "รัก", timeLimit: 12 },
-                { correctWord: "HELP", thaiPrompt: "ช่วยเหลือ", timeLimit: 15 },
-                { correctWord: "NAME", thaiPrompt: "ชื่อ", timeLimit: 12 },
-                { correctWord: "PLAY", thaiPrompt: "เล่น", timeLimit: 12 },
-                { correctWord: "SICK", thaiPrompt: "ป่วย", timeLimit: 15 },
-                { correctWord: "FAST", thaiPrompt: "เร็ว", timeLimit: 15 },
-                { correctWord: "SLOW", thaiPrompt: "ช้า", timeLimit: 15 },
-                { correctWord: "DARK", thaiPrompt: "มืด", timeLimit: 12 },
-                { correctWord: "LIGHT", thaiPrompt: "แสง", timeLimit: 15 },
-                { correctWord: "OPEN", thaiPrompt: "เปิด", timeLimit: 12 },
-                { correctWord: "STOP", thaiPrompt: "หยุด", timeLimit: 12 },
-                { correctWord: "WALK", thaiPrompt: "เดิน", timeLimit: 15 },
-                { correctWord: "TALK", thaiPrompt: "พูด", timeLimit: 12 },
-                { correctWord: "GATE", thaiPrompt: "ประตู", timeLimit: 15 },
-                { correctWord: "FOOD", thaiPrompt: "อาหาร", timeLimit: 15 },
-                { correctWord: "DRINK", thaiPrompt: "เครื่องดื่ม", timeLimit: 15 },
-                { correctWord: "EARS", thaiPrompt: "หู", timeLimit: 12 },
-                { correctWord: "EYE", thaiPrompt: "ตา", timeLimit: 12 },
-                { correctWord: "SING", thaiPrompt: "ร้องเพลง", timeLimit: 15 },
-                { correctWord: "JUMP", thaiPrompt: "กระโดด", timeLimit: 15 },
-                { correctWord: "BELL", thaiPrompt: "ระฆัง", timeLimit: 12 },
-                { correctWord: "KING", thaiPrompt: "พระราชา", timeLimit: 12 },
-                { correctWord: "DOOR", thaiPrompt: "ประตู", timeLimit: 15 }
+                { correctWord: "CAT", thaiPrompt: "แมว", timeLimit: 12 }, { correctWord: "DOG", thaiPrompt: "สุนัข", timeLimit: 12 }, { correctWord: "SUN", thaiPrompt: "พระอาทิตย์", timeLimit: 12 }, { correctWord: "MOON", thaiPrompt: "พระจันทร์", timeLimit: 15 }, { correctWord: "FISH", thaiPrompt: "ปลา", timeLimit: 15 },
+                { correctWord: "TREE", thaiPrompt: "ต้นไม้", timeLimit: 12 }, { correctWord: "BIRD", thaiPrompt: "นก", timeLimit: 12 }, { correctWord: "BLUE", thaiPrompt: "สีน้ำเงิน", timeLimit: 15 }, { correctWord: "RED", thaiPrompt: "สีแดง", timeLimit: 12 }, { correctWord: "RICE", thaiPrompt: "ข้าว", timeLimit: 15 },
+                { correctWord: "BOOK", thaiPrompt: "หนังสือ", timeLimit: 15 }, { correctWord: "CAR", thaiPrompt: "รถยนต์", timeLimit: 12 }, { correctWord: "BUS", thaiPrompt: "รถประจำทาง", timeLimit: 12 }, { correctWord: "HOME", thaiPrompt: "บ้าน", timeLimit: 15 }, { correctWord: "BALL", thaiPrompt: "ลูกบอล", timeLimit: 15 },
+                { correctWord: "HAND", thaiPrompt: "มือ", timeLimit: 15 }, { correctWord: "FOOT", thaiPrompt: "เท้า", timeLimit: 15 }, { correctWord: "FARM", thaiPrompt: "ฟาร์ม", timeLimit: 15 }, { correctWord: "STAR", thaiPrompt: "ดาว", timeLimit: 15 }, { correctWord: "SHIP", thaiPrompt: "เรือ", timeLimit: 15 },
+                { correctWord: "RAIN", thaiPrompt: "ฝน", timeLimit: 15 }, { correctWord: "WIND", thaiPrompt: "ลม", timeLimit: 15 }, { correctWord: "ROAD", thaiPrompt: "ถนน", timeLimit: 15 }, { correctWord: "FIRE", thaiPrompt: "ไฟ", timeLimit: 15 }, { correctWord: "LAKE", thaiPrompt: "ทะเลสาบ", timeLimit: 15 },
+                { correctWord: "WANT", thaiPrompt: "ต้องการ", timeLimit: 15 }, { correctWord: "KNOW", thaiPrompt: "รู้", timeLimit: 12 }, { correctWord: "LOVE", thaiPrompt: "รัก", timeLimit: 12 }, { correctWord: "HELP", thaiPrompt: "ช่วยเหลือ", timeLimit: 15 }, { correctWord: "NAME", thaiPrompt: "ชื่อ", timeLimit: 12 },
+                { correctWord: "PLAY", thaiPrompt: "เล่น", timeLimit: 12 }, { correctWord: "SICK", thaiPrompt: "ป่วย", timeLimit: 15 }, { correctWord: "FAST", thaiPrompt: "เร็ว", timeLimit: 15 }, { correctWord: "SLOW", thaiPrompt: "ช้า", timeLimit: 15 }, { correctWord: "DARK", thaiPrompt: "มืด", timeLimit: 12 },
+                { correctWord: "LIGHT", thaiPrompt: "แสง", timeLimit: 15 }, { correctWord: "OPEN", thaiPrompt: "เปิด", timeLimit: 12 }, { correctWord: "STOP", thaiPrompt: "หยุด", timeLimit: 12 }, { correctWord: "WALK", thaiPrompt: "เดิน", timeLimit: 15 }, { correctWord: "TALK", thaiPrompt: "พูด", timeLimit: 12 },
+                { correctWord: "GATE", thaiPrompt: "ประตู", timeLimit: 15 }, { correctWord: "FOOD", thaiPrompt: "อาหาร", timeLimit: 15 }, { correctWord: "DRINK", thaiPrompt: "เครื่องดื่ม", timeLimit: 15 }, { correctWord: "EARS", thaiPrompt: "หู", timeLimit: 12 }, { correctWord: "EYE", thaiPrompt: "ตา", timeLimit: 12 },
+                { correctWord: "SING", thaiPrompt: "ร้องเพลง", timeLimit: 15 }, { correctWord: "JUMP", thaiPrompt: "กระโดด", timeLimit: 15 }, { correctWord: "BELL", thaiPrompt: "ระฆัง", timeLimit: 12 }, { correctWord: "KING", thaiPrompt: "พระราชา", timeLimit: 12 }, { correctWord: "DOOR", thaiPrompt: "ประตู", timeLimit: 15 }
             ],
 
             // Level 2: Intermediate (4x4 Grid, 5-6 Letters) - 50 Words
             level2Words: [
-                { correctWord: "APPLE", thaiPrompt: "แอปเปิ้ล", timeLimit: 18 },
-                { correctWord: "PEACH", thaiPrompt: "ลูกพีช", timeLimit: 18 },
-                { correctWord: "TIGER", thaiPrompt: "เสือ", timeLimit: 18 },
-                { correctWord: "CHAIR", thaiPrompt: "เก้าอี้", timeLimit: 18 },
-                { correctWord: "YELLOW", thaiPrompt: "สีเหลือง", timeLimit: 20 },
-                { correctWord: "SLEEP", thaiPrompt: "นอนหลับ", timeLimit: 18 },
-                { correctWord: "FAMILY", thaiPrompt: "ครอบครัว", timeLimit: 20 },
-                { correctWord: "BROTHER", thaiPrompt: "พี่ชาย/น้องชาย", timeLimit: 20 },
-                { correctWord: "SISTER", thaiPrompt: "พี่สาว/น้องสาว", timeLimit: 20 },
-                { correctWord: "FRIEND", thaiPrompt: "เพื่อน", timeLimit: 18 },
-                { correctWord: "SCHOOL", thaiPrompt: "โรงเรียน", timeLimit: 20 },
-                { correctWord: "STUDY", thaiPrompt: "เรียน", timeLimit: 18 },
-                { correctWord: "TEACH", thaiPrompt: "สอน", timeLimit: 18 },
-                { correctWord: "WRITER", thaiPrompt: "นักเขียน", timeLimit: 20 },
-                { correctWord: "GARDEN", thaiPrompt: "สวน", timeLimit: 20 },
-                { correctWord: "FLOWER", thaiPrompt: "ดอกไม้", timeLimit: 20 },
-                { correctWord: "WATER", thaiPrompt: "น้ำ", timeLimit: 18 },
-                { correctWord: "OCEAN", thaiPrompt: "มหาสมุทร", timeLimit: 18 },
-                { correctWord: "MOUNTAIN", thaiPrompt: "ภูเขา", timeLimit: 20 },
-                { correctWord: "STREET", thaiPrompt: "ถนน", timeLimit: 18 },
-                { correctWord: "BUILD", thaiPrompt: "สร้าง", timeLimit: 18 },
-                { correctWord: "TRAVEL", thaiPrompt: "เดินทาง", timeLimit: 20 },
-                { correctWord: "EATING", thaiPrompt: "กำลังกิน", timeLimit: 20 },
-                { correctWord: "SMART", thaiPrompt: "ฉลาด", timeLimit: 18 },
-                { correctWord: "CLEVER", thaiPrompt: "เก่ง", timeLimit: 18 },
-                { correctWord: "HAPPY", thaiPrompt: "มีความสุข", timeLimit: 20 },
-                { correctWord: "SMILE", thaiPrompt: "ยิ้ม", timeLimit: 18 },
-                { correctWord: "DANCE", thaiPrompt: "เต้นรำ", timeLimit: 18 },
-                { correctWord: "CLOUDY", thaiPrompt: "มีเมฆมาก", timeLimit: 20 },
-                { correctWord: "WINTER", thaiPrompt: "ฤดูหนาว", timeLimit: 20 },
-                { correctWord: "SUMMER", thaiPrompt: "ฤดูร้อน", timeLimit: 20 },
-                { correctWord: "SPRING", thaiPrompt: "ฤดูใบไม้ผลิ", timeLimit: 20 },
-                { correctWord: "AUTUMN", thaiPrompt: "ฤดูใบไม้ร่วง", timeLimit: 20 },
-                { correctWord: "CHICKEN", thaiPrompt: "ไก่", timeLimit: 20 },
-                { correctWord: "BUTTER", thaiPrompt: "เนย", timeLimit: 20 },
-                { correctWord: "CHEESE", thaiPrompt: "เนยแข็ง", timeLimit: 20 },
-                { correctWord: "SUGAR", thaiPrompt: "น้ำตาล", timeLimit: 20 },
-                { correctWord: "SALT", thaiPrompt: "เกลือ", timeLimit: 18 },
-                { correctWord: "PIRATE", thaiPrompt: "โจรสลัด", timeLimit: 20 },
-                { correctWord: "POLICE", thaiPrompt: "ตำรวจ", timeLimit: 20 },
-                { correctWord: "DOCTOR", thaiPrompt: "หมอ", timeLimit: 18 },
-                { correctWord: "NURSE", thaiPrompt: "พยาบาล", timeLimit: 18 },
-                { correctWord: "ENGINE", thaiPrompt: "เครื่องยนต์", timeLimit: 20 },
-                { correctWord: "TICKET", thaiPrompt: "ตั๋ว", timeLimit: 20 },
-                { correctWord: "PLANET", thaiPrompt: "ดาวเคราะห์", timeLimit: 20 },
-                { correctWord: "FUTURE", thaiPrompt: "อนาคต", timeLimit: 20 },
-                { correctWord: "MOMENT", thaiPrompt: "ชั่วขณะ", timeLimit: 20 },
-                { correctWord: "PERSON", thaiPrompt: "บุคคล", timeLimit: 20 },
-                { correctWord: "PEOPLE", thaiPrompt: "ผู้คน", timeLimit: 20 },
-                { correctWord: "SYSTEM", thaiPrompt: "ระบบ", timeLimit: 20 }
+                { correctWord: "APPLE", thaiPrompt: "แอปเปิ้ล", timeLimit: 18 }, { correctWord: "PEACH", thaiPrompt: "ลูกพีช", timeLimit: 18 }, { correctWord: "TIGER", thaiPrompt: "เสือ", timeLimit: 18 }, { correctWord: "CHAIR", thaiPrompt: "เก้าอี้", timeLimit: 18 }, { correctWord: "YELLOW", thaiPrompt: "สีเหลือง", timeLimit: 20 },
+                { correctWord: "SLEEP", thaiPrompt: "นอนหลับ", timeLimit: 18 }, { correctWord: "FAMILY", thaiPrompt: "ครอบครัว", timeLimit: 20 }, { correctWord: "BROTHER", thaiPrompt: "พี่ชาย/น้องชาย", timeLimit: 20 }, { correctWord: "SISTER", thaiPrompt: "พี่สาว/น้องสาว", timeLimit: 20 }, { correctWord: "FRIEND", thaiPrompt: "เพื่อน", timeLimit: 18 },
+                { correctWord: "SCHOOL", thaiPrompt: "โรงเรียน", timeLimit: 20 }, { correctWord: "STUDY", thaiPrompt: "เรียน", timeLimit: 18 }, { correctWord: "TEACH", thaiPrompt: "สอน", timeLimit: 18 }, { correctWord: "WRITER", thaiPrompt: "นักเขียน", timeLimit: 20 }, { correctWord: "GARDEN", thaiPrompt: "สวน", timeLimit: 20 },
+                { correctWord: "FLOWER", thaiPrompt: "ดอกไม้", timeLimit: 20 }, { correctWord: "WATER", thaiPrompt: "น้ำ", timeLimit: 18 }, { correctWord: "OCEAN", thaiPrompt: "มหาสมุทร", timeLimit: 18 }, { correctWord: "MOUNTAIN", thaiPrompt: "ภูเขา", timeLimit: 20 }, { correctWord: "STREET", thaiPrompt: "ถนน", timeLimit: 18 },
+                { correctWord: "BUILD", thaiPrompt: "สร้าง", timeLimit: 18 }, { correctWord: "TRAVEL", thaiPrompt: "เดินทาง", timeLimit: 20 }, { correctWord: "EATING", thaiPrompt: "กำลังกิน", timeLimit: 20 }, { correctWord: "SMART", thaiPrompt: "ฉลาด", timeLimit: 18 }, { correctWord: "CLEVER", thaiPrompt: "เก่ง", timeLimit: 18 },
+                { correctWord: "HAPPY", thaiPrompt: "มีความสุข", timeLimit: 20 }, { correctWord: "SMILE", thaiPrompt: "ยิ้ม", timeLimit: 18 }, { correctWord: "DANCE", thaiPrompt: "เต้นรำ", timeLimit: 18 }, { correctWord: "CLOUDY", thaiPrompt: "มีเมฆมาก", timeLimit: 20 }, { correctWord: "WINTER", thaiPrompt: "ฤดูหนาว", timeLimit: 20 },
+                { correctWord: "SUMMER", thaiPrompt: "ฤดูร้อน", timeLimit: 20 }, { correctWord: "SPRING", thaiPrompt: "ฤดูใบไม้ผลิ", timeLimit: 20 }, { correctWord: "AUTUMN", thaiPrompt: "ฤดูใบไม้ร่วง", timeLimit: 20 }, { correctWord: "CHICKEN", thaiPrompt: "ไก่", timeLimit: 20 }, { correctWord: "BUTTER", thaiPrompt: "เนย", timeLimit: 20 },
+                { correctWord: "CHEESE", thaiPrompt: "เนยแข็ง", timeLimit: 20 }, { correctWord: "SUGAR", thaiPrompt: "น้ำตาล", timeLimit: 20 }, { correctWord: "SALT", thaiPrompt: "เกลือ", timeLimit: 18 }, { correctWord: "PIRATE", thaiPrompt: "โจรสลัด", timeLimit: 20 }, { correctWord: "POLICE", thaiPrompt: "ตำรวจ", timeLimit: 20 },
+                { correctWord: "DOCTOR", thaiPrompt: "หมอ", timeLimit: 18 }, { correctWord: "NURSE", thaiPrompt: "พยาบาล", timeLimit: 18 }, { correctWord: "ENGINE", thaiPrompt: "เครื่องยนต์", timeLimit: 20 }, { correctWord: "TICKET", thaiPrompt: "ตั๋ว", timeLimit: 20 }, { correctWord: "PLANET", thaiPrompt: "ดาวเคราะห์", timeLimit: 20 },
+                { correctWord: "FUTURE", thaiPrompt: "อนาคต", timeLimit: 20 }, { correctWord: "MOMENT", thaiPrompt: "ชั่วขณะ", timeLimit: 20 }, { correctWord: "PERSON", thaiPrompt: "บุคคล", timeLimit: 20 }, { correctWord: "PEOPLE", thaiPrompt: "ผู้คน", timeLimit: 20 }, { correctWord: "SYSTEM", thaiPrompt: "ระบบ", timeLimit: 20 }
             ],
 
             // Level 3: Advanced (5x5/6x6 Grid, 7-10+ Letters) - 50 Words
             level3Words: [
-                { correctWord: "ELEPHANT", thaiPrompt: "ช้าง", timeLimit: 25 },
-                { correctWord: "COMPUTER", thaiPrompt: "คอมพิวเตอร์", timeLimit: 25 },
-                { correctWord: "LIBRARY", thaiPrompt: "ห้องสมุด", timeLimit: 22 },
-                { correctWord: "UNIVERSITY", thaiPrompt: "มหาวิทยาลัย", timeLimit: 30 },
-                { correctWord: "WEATHER", thaiPrompt: "สภาพอากาศ", timeLimit: 25 },
-                { correctWord: "HOSPITAL", thaiPrompt: "โรงพยาบาล", timeLimit: 25 },
-                { correctWord: "BUILDING", thaiPrompt: "อาคาร", timeLimit: 22 },
-                { correctWord: "MAGAZINE", thaiPrompt: "นิตยสาร", timeLimit: 25 },
-                { correctWord: "HOLIDAY", thaiPrompt: "วันหยุด", timeLimit: 22 },
-                { correctWord: "VACATION", thaiPrompt: "การพักผ่อน", timeLimit: 25 },
-                { correctWord: "BEAUTIFUL", thaiPrompt: "สวยงาม", timeLimit: 30 },
-                { correctWord: "DIFFICULT", thaiPrompt: "ยาก", timeLimit: 25 },
-                { correctWord: "INTEREST", thaiPrompt: "น่าสนใจ", timeLimit: 25 },
-                { correctWord: "EXCELLENT", thaiPrompt: "ยอดเยี่ยม", timeLimit: 25 },
-                { correctWord: "COMPLETE", thaiPrompt: "เสร็จสมบูรณ์", timeLimit: 25 },
-                { correctWord: "TOGETHER", thaiPrompt: "ด้วยกัน", timeLimit: 25 },
-                { correctWord: "LANGUAGE", thaiPrompt: "ภาษา", timeLimit: 25 },
-                { correctWord: "HISTORY", thaiPrompt: "ประวัติศาสตร์", timeLimit: 30 },
-                { correctWord: "SCIENCE", thaiPrompt: "วิทยาศาสตร์", timeLimit: 25 },
-                { correctWord: "MATHEMATICS", thaiPrompt: "คณิตศาสตร์", timeLimit: 30 },
-                { correctWord: "GEOGRAPHY", thaiPrompt: "ภูมิศาสตร์", timeLimit: 30 },
-                { correctWord: "TECHNOLOGY", thaiPrompt: "เทคโนโลยี", timeLimit: 30 },
-                { correctWord: "TELEPHONE", thaiPrompt: "โทรศัพท์", timeLimit: 25 },
-                { correctWord: "INTERNET", thaiPrompt: "อินเทอร์เน็ต", timeLimit: 25 },
-                { correctWord: "COMMUNITY", thaiPrompt: "ชุมชน", timeLimit: 25 },
-                { correctWord: "DIRECTION", thaiPrompt: "ทิศทาง", timeLimit: 25 },
-                { correctWord: "SOLUTION", thaiPrompt: "วิธีแก้ปัญหา", timeLimit: 25 },
-                { correctWord: "QUESTION", thaiPrompt: "คำถาม", timeLimit: 25 },
-                { correctWord: "ANSWER", thaiPrompt: "คำตอบ", timeLimit: 25 },
-                { correctWord: "MATERIAL", thaiPrompt: "วัสดุ", timeLimit: 25 },
-                { correctWord: "ACTIVITY", thaiPrompt: "กิจกรรม", timeLimit: 25 },
-                { correctWord: "POSITION", thaiPrompt: "ตำแหน่ง", timeLimit: 25 },
-                { correctWord: "GOVERNMENT", thaiPrompt: "รัฐบาล", timeLimit: 30 },
-                { correctWord: "PRESIDENT", thaiPrompt: "ประธานาธิบดี", timeLimit: 30 },
-                { correctWord: "MINISTER", thaiPrompt: "รัฐมนตรี", timeLimit: 25 },
-                { correctWord: "BUSINESS", thaiPrompt: "ธุรกิจ", timeLimit: 25 },
-                { correctWord: "INDUSTRY", thaiPrompt: "อุตสาหกรรม", timeLimit: 30 },
-                { correctWord: "CUSTOMER", thaiPrompt: "ลูกค้า", timeLimit: 25 },
-                { correctWord: "DEVELOPER", thaiPrompt: "นักพัฒนา", timeLimit: 25 },
-                { correctWord: "PROGRAMMER", thaiPrompt: "โปรแกรมเมอร์", timeLimit: 30 },
-                { correctWord: "ADVENTURE", thaiPrompt: "การผจญภัย", timeLimit: 30 },
-                { correctWord: "TRADITION", thaiPrompt: "ประเพณี", timeLimit: 25 },
-                { correctWord: "CULTURE", thaiPrompt: "วัฒนธรรม", timeLimit: 25 },
-                { correctWord: "POPULAR", thaiPrompt: "เป็นที่นิยม", timeLimit: 25 },
-                { correctWord: "SURPRISE", thaiPrompt: "ประหลาดใจ", timeLimit: 25 },
-                { correctWord: "CREATIVE", thaiPrompt: "สร้างสรรค์", timeLimit: 25 },
-                { correctWord: "DIAMOND", thaiPrompt: "เพชร", timeLimit: 25 },
-                { correctWord: "TREASURE", thaiPrompt: "สมบัติ", timeLimit: 25 },
-                { correctWord: "EXPLORER", thaiPrompt: "นักสำรวจ", timeLimit: 25 },
-                { correctWord: "PHARAOH", thaiPrompt: "ฟาโรห์", timeLimit: 25 },
-                { correctWord: "PYRAMID", thaiPrompt: "พีระมิด", timeLimit: 25 },
-                { correctWord: "MYSTERY", thaiPrompt: "ความลึกลับ", timeLimit: 25 },
-                { correctWord: "ANCIENT", thaiPrompt: "โบราณ", timeLimit: 25 }
+                { correctWord: "ELEPHANT", thaiPrompt: "ช้าง", timeLimit: 25 }, { correctWord: "COMPUTER", thaiPrompt: "คอมพิวเตอร์", timeLimit: 25 }, { correctWord: "LIBRARY", thaiPrompt: "ห้องสมุด", timeLimit: 22 }, { correctWord: "UNIVERSITY", thaiPrompt: "มหาวิทยาลัย", timeLimit: 30 }, { correctWord: "WEATHER", thaiPrompt: "สภาพอากาศ", timeLimit: 25 },
+                { correctWord: "HOSPITAL", thaiPrompt: "โรงพยาบาล", timeLimit: 25 }, { correctWord: "BUILDING", thaiPrompt: "อาคาร", timeLimit: 22 }, { correctWord: "MAGAZINE", thaiPrompt: "นิตยสาร", timeLimit: 25 }, { correctWord: "HOLIDAY", thaiPrompt: "วันหยุด", timeLimit: 22 }, { correctWord: "VACATION", thaiPrompt: "การพักผ่อน", timeLimit: 25 },
+                { correctWord: "BEAUTIFUL", thaiPrompt: "สวยงาม", timeLimit: 30 }, { correctWord: "DIFFICULT", thaiPrompt: "ยาก", timeLimit: 25 }, { correctWord: "INTEREST", thaiPrompt: "น่าสนใจ", timeLimit: 25 }, { correctWord: "EXCELLENT", thaiPrompt: "ยอดเยี่ยม", timeLimit: 25 }, { correctWord: "COMPLETE", thaiPrompt: "เสร็จสมบูรณ์", timeLimit: 25 },
+                { correctWord: "TOGETHER", thaiPrompt: "ด้วยกัน", timeLimit: 25 }, { correctWord: "LANGUAGE", thaiPrompt: "ภาษา", timeLimit: 25 }, { correctWord: "HISTORY", thaiPrompt: "ประวัติศาสตร์", timeLimit: 30 }, { correctWord: "SCIENCE", thaiPrompt: "วิทยาศาสตร์", timeLimit: 25 }, { correctWord: "MATHEMATICS", thaiPrompt: "คณิตศาสตร์", timeLimit: 30 },
+                { correctWord: "GEOGRAPHY", thaiPrompt: "ภูมิศาสตร์", timeLimit: 30 }, { correctWord: "TECHNOLOGY", thaiPrompt: "เทคโนโลยี", timeLimit: 30 }, { correctWord: "TELEPHONE", thaiPrompt: "โทรศัพท์", timeLimit: 25 }, { correctWord: "INTERNET", thaiPrompt: "อินเทอร์เน็ต", timeLimit: 25 }, { correctWord: "COMMUNITY", thaiPrompt: "ชุมชน", timeLimit: 25 },
+                { correctWord: "DIRECTION", thaiPrompt: "ทิศทาง", timeLimit: 25 }, { correctWord: "SOLUTION", thaiPrompt: "วิธีแก้ปัญหา", timeLimit: 25 }, { correctWord: "QUESTION", thaiPrompt: "คำถาม", timeLimit: 25 }, { correctWord: "ANSWER", thaiPrompt: "คำตอบ", timeLimit: 25 }, { correctWord: "MATERIAL", thaiPrompt: "วัสดุ", timeLimit: 25 },
+                { correctWord: "ACTIVITY", thaiPrompt: "กิจกรรม", timeLimit: 25 }, { correctWord: "POSITION", thaiPrompt: "ตำแหน่ง", timeLimit: 25 }, { correctWord: "GOVERNMENT", thaiPrompt: "รัฐบาล", timeLimit: 30 }, { correctWord: "PRESIDENT", thaiPrompt: "ประธานาธิบดี", timeLimit: 30 }, { correctWord: "MINISTER", thaiPrompt: "รัฐมนตรี", timeLimit: 25 },
+                { correctWord: "BUSINESS", thaiPrompt: "ธุรกิจ", timeLimit: 25 }, { correctWord: "INDUSTRY", thaiPrompt: "อุตสาหกรรม", timeLimit: 30 }, { correctWord: "CUSTOMER", thaiPrompt: "ลูกค้า", timeLimit: 25 }, { correctWord: "DEVELOPER", thaiPrompt: "นักพัฒนา", timeLimit: 25 }, { correctWord: "PROGRAMMER", thaiPrompt: "โปรแกรมเมอร์", timeLimit: 30 },
+                { correctWord: "ADVENTURE", thaiPrompt: "การผจญภัย", timeLimit: 30 }, { correctWord: "TRADITION", thaiPrompt: "ประเพณี", timeLimit: 25 }, { correctWord: "CULTURE", thaiPrompt: "วัฒนธรรม", timeLimit: 25 }, { correctWord: "POPULAR", thaiPrompt: "เป็นที่นิยม", timeLimit: 25 }, { correctWord: "SURPRISE", thaiPrompt: "ประหลาดใจ", timeLimit: 25 },
+                { correctWord: "CREATIVE", thaiPrompt: "สร้างสรรค์", timeLimit: 25 }, { correctWord: "DIAMOND", thaiPrompt: "เพชร", timeLimit: 25 }, { correctWord: "TREASURE", thaiPrompt: "สมบัติ", timeLimit: 25 }, { correctWord: "EXPLORER", thaiPrompt: "นักสำรวจ", timeLimit: 25 }, { correctWord: "PHARAOH", thaiPrompt: "ฟาโรห์", timeLimit: 25 }
             ]
         };
         
@@ -530,7 +407,6 @@
         let isGameActive = false;
         let utterance = null; 
         
-        // FIX 1: New state for sequential spelling
         let currentGuessWord = "";
         let nextExpectedChar = ""; 
 
@@ -563,18 +439,17 @@
             }
         }
         
-        // FIX 1: Changed delay to 0.5s (500ms) and handles all flow
+        // Fix for 0.5s auto next: Implemented in speakAnswer
         function speakAnswer(englishWord, thaiMeaning) {
             
             const onThaiSpeakEnd = () => {
                  utterance.onend = null; 
                  setTimeout(() => {
-                     // Check if not already going to main screen
                      if (nextBtn.textContent.includes('ข้อถัดไป')) { 
                          currentQuizIndex++;
                          nextQuestion(); // ไปข้อถัดไปอัตโนมัติ
                      }
-                 }, 500); 
+                 }, 500); // 0.5 วินาที
             };
             
             const onEnglishSpeakEnd = () => {
@@ -650,7 +525,7 @@
             
             // Clear message area after a short delay
             setTimeout(() => {
-                if (!isAnswered) { // Only update if game is still active
+                if (!isAnswered) {
                     messageAreaEl.textContent = 'สะกดคำโจทย์ตามลำดับ...';
                     messageAreaEl.style.color = 'var(--color-text-dark)';
                 }
@@ -658,22 +533,18 @@
         }
 
         function handleTileClick(event) {
-            // FIX 1: New Click Logic
             if (!isGameActive || isAnswered || event.currentTarget.classList.contains('selected')) return;
 
             const tileEl = event.currentTarget;
             const clickedChar = tileEl.querySelector('.tile-char-wrapper').textContent;
             
-            // Check if the clicked character is the next expected character
             if (clickedChar === nextExpectedChar) {
                 currentGuessWord += clickedChar;
                 tileEl.classList.add('selected');
                 tileEl.style.cursor = 'default';
                 
-                // Update word display dynamically
                 englishWordDisplayEl.textContent = currentGuessWord;
                 
-                // Check for correct answer
                 checkFlow();
                 
             } else {
@@ -704,9 +575,8 @@
             });
         }
         
-        // FIX 1 Helper: Highlight all tiles when game ends (correct or time up)
+        // Highlight all tiles when game ends
         function highlightCorrectAnswer() {
-            const q = currentLevelData.questions[currentQuizIndex];
             const allTiles = gameGridEl.querySelectorAll('.tile');
             
             allTiles.forEach((tileEl) => {
@@ -715,7 +585,6 @@
                     tileEl.classList.add('correct');
                     tileEl.classList.remove('selected');
                 } else {
-                    // Dim distractors
                     tileEl.style.opacity = '0.4'; 
                 }
                 tileEl.style.cursor = 'default';
@@ -730,12 +599,10 @@
             const currentLength = currentGuessWord.length;
 
             if (currentLength < correctWord.length) {
-                // Set the next expected character
                 nextExpectedChar = correctWord.charAt(currentLength);
             }
             
             if (currentGuessWord === correctWord) {
-                // Correct answer
                 isAnswered = true;
                 score++;
                 messageAreaEl.textContent = `✅ สำเร็จ! คำศัพท์คือ ${q.correctWord}`;
@@ -743,7 +610,6 @@
                 highlightCorrectAnswer();
                 endQuestion(true);
             } else if (timeUp) {
-                // Time is up
                 isAnswered = true;
                 messageAreaEl.textContent = `⏰ หมดเวลา! คำศัพท์คือ ${q.correctWord}`;
                 messageAreaEl.style.color = 'var(--color-wrong)';
@@ -773,11 +639,10 @@
                     const btn = document.createElement('button');
                     btn.className = 'level-btn';
                     
-                    // FIX 2: New button text format
+                    // Display fix: Level X-Y
                     btn.textContent = `Level ${data.level}-${i + 1}`;
                     
                     btn.setAttribute('data-level-id', subLevel.id);
-                    // FIX 2: Add data-level attribute for CSS coloring
                     btn.setAttribute('data-level', data.level); 
                     
                     btn.addEventListener('click', () => {
@@ -813,7 +678,7 @@
             nextBtn.disabled = true;
             englishWordDisplayEl.textContent = ''; 
             messageAreaEl.textContent = 'สะกดคำโจทย์ตามลำดับ...';
-            messageAreaEl.style.color = 'var(--color-text-dark)';
+            messageAreaAreaEl.style.color = 'var(--color-text-dark)';
 
             updateStatusBar();
             const q = currentLevelData.questions[currentQuizIndex];
@@ -830,7 +695,6 @@
         function setupQuestion(q, gridSize) {
             thaiPromptEl.textContent = `โจทย์: ${q.thaiPrompt}`;
             createGrid(q, gridSize);
-            // FIX 1: Initialize guess state
             resetGuess(); 
         }
         
@@ -842,10 +706,8 @@
             
             const q = currentLevelData.questions[currentQuizIndex];
             
-            // Set the full correct word display
             englishWordDisplayEl.textContent = `${q.correctWord} (${q.thaiPrompt})`;
             
-            // speakAnswer จะจัดการการพูดและการเปลี่ยนข้อถัดไปโดยอัตโนมัติ
             speakAnswer(q.correctWord, q.thaiPrompt);
         }
 
@@ -860,7 +722,6 @@
             nextBtn.textContent = 'กลับหน้าหลัก (Level Selection)';
             nextBtn.disabled = false;
             
-            // ตั้งค่า Event Handler สำหรับกลับหน้าหลัก
             nextBtn.onclick = () => {
                 window.speechSynthesis.cancel();
                 showScreen('level-select-screen');
@@ -881,7 +742,6 @@
                      return;
                  }
 
-                 // ถ้าผู้เล่นกดเองในขณะที่เฉลยอยู่
                  if (isAnswered) {
                      window.speechSynthesis.cancel();
                      currentQuizIndex++;
