@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Word Trace 4.0: Sequential Spelling 👑 (Final Fix)</title>
+    <title>Word Trace 4.0: Sequential Spelling 👑 (Final Working)</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        /* Global & Pharaoh Theme */
+        /* Global & Theme Setup */
         :root {
             --color-primary: #1565C0; /* Lapis Blue */
             --color-secondary: #FFC107; /* Gold (L1) */
@@ -45,7 +45,6 @@
             flex-direction: column;
             justify-content: flex-start;
             padding: 0;
-            transition: all 0.5s ease;
         }
 
         /* Header */
@@ -55,18 +54,8 @@
             padding: 1rem 1rem;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
         }
-        header h1 {
-            font-size: 1.8rem;
-            margin: 0;
-        }
-        .version-tag {
-            font-size: 0.7rem;
-            font-weight: 400;
-            display: block;
-            margin-top: 2px;
-            opacity: 0.8;
-            color: var(--color-text-light);
-        }
+        header h1 { font-size: 1.8rem; margin: 0; }
+        .version-tag { font-size: 0.7rem; font-weight: 400; display: block; margin-top: 2px; opacity: 0.8; color: var(--color-text-light); }
 
         /* Screen Management */
         .screen {
@@ -76,9 +65,7 @@
             flex-direction: column;
             justify-content: space-between;
         }
-        .screen.active {
-            display: flex;
-        }
+        .screen.active { display: flex; }
         
         /* --- Level Selection Screen --- */
         #level-select-screen .level-grid-select {
@@ -88,7 +75,7 @@
             padding: 1rem 0;
         }
         
-        /* Level Buttons and New Color Scheme */
+        /* Level Buttons and New Color Scheme (L1 Yellow, L2 Orange, L3 Red) */
         .level-btn {
             color: var(--color-text-dark);
             border: none;
@@ -98,50 +85,20 @@
             font-weight: bold;
             cursor: pointer;
             transition: transform 0.1s, box-shadow 0.1s;
-            /* Default shadow */
-            box-shadow: 0 4px 0 #AAA; 
         }
         
-        /* L1 Yellow */
-        .level-btn[data-level='1'] {
-            background-color: var(--color-secondary); 
-            box-shadow: 0 4px 0 #FFB300;
-        }
-        /* L2 Orange */
-        .level-btn[data-level='2'] {
-            background-color: var(--color-level-2);
-            box-shadow: 0 4px 0 #F57C00;
-        }
-        /* L3 Red */
-        .level-btn[data-level='3'] {
-            background-color: var(--color-level-3);
-            box-shadow: 0 4px 0 #D32F2F;
-            color: var(--color-text-light);
-        }
+        .level-btn[data-level='1'] { background-color: var(--color-secondary); box-shadow: 0 4px 0 #FFB300; }
+        .level-btn[data-level='2'] { background-color: var(--color-level-2); box-shadow: 0 4px 0 #F57C00; }
+        .level-btn[data-level='3'] { background-color: var(--color-level-3); box-shadow: 0 4px 0 #D32F2F; color: var(--color-text-light); }
 
-        .level-btn:active {
-            transform: translateY(2px);
-            box-shadow: none; 
-        }
+        .level-btn:active { transform: translateY(2px); box-shadow: none; }
         .level-btn[data-level='1']:active { box-shadow: 0 2px 0 #FFB300; }
         .level-btn[data-level='2']:active { box-shadow: 0 2px 0 #F57C00; }
         .level-btn[data-level='3']:active { box-shadow: 0 2px 0 #D32F2F; }
 
         /* Timer Bar */
-        #timer-bar-container {
-            width: 100%;
-            height: 20px;
-            background-color: #CFD8DC;
-            border-radius: 10px;
-            overflow: hidden;
-            margin-bottom: 1rem;
-        }
-        #timer-bar {
-            height: 100%;
-            width: 100%; 
-            background-color: var(--color-secondary);
-            transition: width 0.1s linear;
-        }
+        #timer-bar-container { width: 100%; height: 20px; background-color: #CFD8DC; border-radius: 10px; overflow: hidden; margin-bottom: 1rem; }
+        #timer-bar { height: 100%; width: 100%; background-color: var(--color-secondary); transition: width 0.1s linear; }
 
         /* Game Grid */
         #game-grid {
@@ -170,18 +127,8 @@
         }
         
         /* Tile State Styles */
-        .tile.selected {
-            background-color: #B2EBF2; /* Light Cyan for selected tiles */
-            border-color: #00BCD4;
-            opacity: 0.7;
-            cursor: default;
-        }
-        .tile.correct {
-            background-color: var(--color-correct); /* Green highlight for final answer */
-            border-color: #4CAF50;
-            opacity: 1;
-            cursor: default;
-        }
+        .tile.selected { background-color: #B2EBF2; border-color: #00BCD4; opacity: 0.7; cursor: default; }
+        .tile.correct { background-color: var(--color-correct); border-color: #4CAF50; opacity: 1; cursor: default; }
         
         .tile-char-wrapper {
              font-size: calc(30px + 2vw); 
@@ -192,13 +139,7 @@
         }
         
         /* Word Display Area */
-        #english-word-display {
-            font-size: 2rem;
-            font-weight: 900;
-            min-height: 2rem;
-            color: var(--color-primary);
-            margin: 0.5rem 0 0.5rem 0;
-        }
+        #english-word-display { font-size: 2rem; font-weight: 900; min-height: 2rem; color: var(--color-primary); margin: 0.5rem 0 0.5rem 0; }
 
         /* Next Button */
         #next-btn {
@@ -215,15 +156,8 @@
             transition: all 0.1s;
             margin-top: 2rem;
         }
-        #next-btn:active:not(:disabled) {
-            transform: translateY(2px);
-            box-shadow: 0 2px 0 #0D47A1;
-        }
-        #next-btn:disabled {
-             background-color: #B0BEC5;
-             box-shadow: 0 4px 0 #90A4AE;
-             cursor: default;
-        }
+        #next-btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 #0D47A1; }
+        #next-btn:disabled { background-color: #B0BEC5; box-shadow: 0 4px 0 #90A4AE; cursor: default; }
         
     </style>
 </head>
@@ -232,7 +166,7 @@
     <div class="container" id="main-container">
         <header>
             <h1>Word Trace 👑</h1>
-            <span class="version-tag">Version 4.0: Sequential Spelling (Final)</span>
+            <span class="version-tag">Version 4.0: Sequential Spelling (Final Working)</span>
         </header>
 
         <div id="level-select-screen" class="screen active">
@@ -273,11 +207,10 @@
     <script>
         // --- DATA (Word Trace Questions) ---
         
-        // Ensure distractor characters are not in the target word
         function getRandomDistractorChar(excludeChars = []) {
             const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
             const availableChars = alphabet.split('').filter(char => !excludeChars.includes(char));
-            if (availableChars.length === 0) return 'Z'; // Fallback
+            if (availableChars.length === 0) return 'Z'; 
             return availableChars[Math.floor(Math.random() * availableChars.length)];
         }
 
@@ -363,10 +296,10 @@
         
         // Map word lists to full question objects
         const level1Questions = wordData.level1Words.map(q => ({
-            ...q, tiles: generateTiles(q.correctWord, q.correctWord.length, 3)
+            ...q, tiles: generateTiles(q.correctWord, q.correctWord.length, 3), gridSize: 3 
         }));
         const level2Questions = wordData.level2Words.map(q => ({
-            ...q, tiles: generateTiles(q.correctWord, q.correctWord.length, 4)
+            ...q, tiles: generateTiles(q.correctWord, q.correctWord.length, 4), gridSize: 4
         }));
         const level3Questions = wordData.level3Words.map(q => {
             const gridSize = q.correctWord.length > 9 ? 6 : 5;
@@ -377,9 +310,9 @@
 
 
         const allQuizData = [
-            { level: 1, title: "Beginner (3x3 Grid)", gridSize: 3, questions: level1Questions },
-            { level: 2, title: "Intermediate (4x4 Grid)", gridSize: 4, questions: level2Questions },
-            { level: 3, title: "Advanced (5x5/6x6 Grid)", gridSize: 5, questions: level3Questions }
+            { level: 1, title: "Beginner", questions: level1Questions },
+            { level: 2, title: "Intermediate", questions: level2Questions },
+            { level: 3, title: "Advanced", questions: level3Questions }
         ];
 
         // --- ELEMENTS ---
@@ -439,13 +372,14 @@
             }
         }
         
-        // Fix for 0.5s auto next: Implemented in speakAnswer
+        // Auto-next logic: implemented here
         function speakAnswer(englishWord, thaiMeaning) {
             
             const onThaiSpeakEnd = () => {
                  utterance.onend = null; 
                  setTimeout(() => {
-                     if (nextBtn.textContent.includes('ข้อถัดไป')) { 
+                     // Check if game is still running (not back to main screen)
+                     if (currentLevelData && currentQuizIndex < currentLevelData.questions.length && nextBtn.textContent.includes('ข้อถัดไป')) { 
                          currentQuizIndex++;
                          nextQuestion(); // ไปข้อถัดไปอัตโนมัติ
                      }
@@ -470,7 +404,9 @@
         }
 
         function updateStatusBar() {
-            levelTitleEl.textContent = `Level ${currentLevelData.level}: ${currentLevelData.title.split('(')[0].trim()}`;
+             // currentLevelData.title is "Beginner", "Intermediate", "Advanced"
+             // currentLevelData.subLevelTitle is "ชุดที่ X"
+            levelTitleEl.textContent = `Level ${currentLevelData.level}-${currentLevelData.subLevelIndex + 1}: ${currentLevelData.title.trim()}`;
             qCountEl.textContent = `ข้อ: ${currentQuizIndex + 1}/${currentLevelData.questions.length}`; 
             scoreEl.textContent = `คะแนน: ${score}`;
         }
@@ -526,7 +462,7 @@
             // Clear message area after a short delay
             setTimeout(() => {
                 if (!isAnswered) {
-                    messageAreaEl.textContent = 'สะกดคำโจทย์ตามลำดับ...';
+                    messageAreaEl.textContent = `สะกดคำโจทย์ตามลำดับ... (เริ่มที่ ${nextExpectedChar})`;
                     messageAreaEl.style.color = 'var(--color-text-dark)';
                 }
             }, 1000);
@@ -630,7 +566,8 @@
                 subLevels: Array.from({ length: 10 }, (_, i) => ({
                     id: `${data.level}-${i + 1}`,
                     title: `ชุดที่ ${i + 1}`,
-                    questions: data.questions.slice(i * 5, (i + 1) * 5)
+                    questions: data.questions.slice(i * 5, (i + 1) * 5),
+                    index: i
                 }))
             }));
 
@@ -657,7 +594,7 @@
             currentLevelData = {
                 ...levelData,
                 questions: subLevelData.questions,
-                title: `${levelData.title.split('(')[0].trim()} ชุด ${subLevelData.title.split(' ')[1]}`
+                subLevelIndex: subLevelData.index
             }; 
             currentQuizIndex = 0;
             score = 0;
@@ -669,6 +606,12 @@
         function nextQuestion() {
             window.speechSynthesis.cancel();
             
+            if (currentLevelData === null) {
+                // Safety check: Should not happen if coming from startGame
+                showScreen('level-select-screen');
+                return;
+            }
+
             if (currentQuizIndex >= currentLevelData.questions.length) {
                 endGame();
                 return;
@@ -676,17 +619,14 @@
             
             isAnswered = false;
             nextBtn.disabled = true;
+            nextBtn.textContent = 'ข้อถัดไป ⏭️/กลับหน้าหลัก'; // Reset button text
             englishWordDisplayEl.textContent = ''; 
-            messageAreaEl.textContent = 'สะกดคำโจทย์ตามลำดับ...';
-            messageAreaAreaEl.style.color = 'var(--color-text-dark)';
+            messageAreaEl.textContent = ''; // Will be reset in resetGuess
 
             updateStatusBar();
             const q = currentLevelData.questions[currentQuizIndex];
             
-            let gridSize = currentLevelData.gridSize;
-            if (q.gridSize) { 
-                gridSize = q.gridSize;
-            }
+            let gridSize = q.gridSize;
 
             setupQuestion(q, gridSize);
             startTimer(q.timeLimit);
@@ -712,7 +652,7 @@
         }
 
         function endGame() {
-            levelTitleEl.textContent = `จบ Level ${currentLevelData.title}!`;
+            levelTitleEl.textContent = `จบ Level ${currentLevelData.level}!`;
             qCountEl.textContent = '';
             
             messageAreaEl.textContent = `คุณทำคะแนนได้ ${score}/${currentLevelData.questions.length} คะแนน`;
@@ -725,10 +665,24 @@
             nextBtn.onclick = () => {
                 window.speechSynthesis.cancel();
                 showScreen('level-select-screen');
+                // Reset to default next button behavior
                 nextBtn.textContent = 'ข้อถัดไป ⏭️/กลับหน้าหลัก';
-                nextBtn.onclick = null;
+                nextBtn.onclick = handleManualNext;
             };
         }
+
+        function handleManualNext() {
+             if (nextBtn.textContent.includes('กลับหน้าหลัก')) {
+                 return; // Handled by endGame()
+             }
+
+             if (isAnswered) {
+                 window.speechSynthesis.cancel();
+                 currentQuizIndex++;
+                 nextQuestion();
+             }
+        }
+
 
         // --- INITIAL SETUP ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -737,17 +691,7 @@
             showScreen('level-select-screen');
 
             // Event listener สำหรับการกดปุ่มข้อถัดไปเอง (Manual Next)
-            nextBtn.addEventListener('click', () => {
-                 if (nextBtn.textContent.includes('กลับหน้าหลัก')) {
-                     return;
-                 }
-
-                 if (isAnswered) {
-                     window.speechSynthesis.cancel();
-                     currentQuizIndex++;
-                     nextQuestion();
-                 }
-            });
+            nextBtn.addEventListener('click', handleManualNext);
         });
     </script>
 </body>
