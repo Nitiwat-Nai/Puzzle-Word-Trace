@@ -3,20 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Word Trace 3.0: The Pharaoh's Trace 👑 (Fixed)</title>
+    <title>Word Trace 4.0: Sequential Spelling 👑</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         /* Global & Pharaoh Theme */
         :root {
             --color-primary: #1565C0; /* Lapis Blue */
-            --color-secondary: #FFC107; /* Gold */
+            --color-secondary: #FFC107; /* Gold (L1) */
+            --color-level-2: #FF9800; /* Orange (L2) */
+            --color-level-3: #F44336; /* Red (L3) */
             --color-correct: #66BB6A; /* Green */
             --color-wrong: #EF5350; /* Red */
             --color-bg: #FFF8E1; /* Light Sand */
             --color-card: #FFFFFF; /* Ivory */
             --color-text-dark: #263238;
             --color-text-light: #FFFFFF;
-            --grid-size: 4; /* Default grid size */
         }
 
         /* Container Styles */
@@ -86,23 +87,44 @@
             gap: 15px;
             padding: 1rem 0;
         }
+        
+        /* Level Buttons and New Color Scheme */
         .level-btn {
-            background-color: var(--color-secondary); 
             color: var(--color-text-dark);
             border: none;
             padding: 1.5rem 0.5rem;
             border-radius: 12px;
-            font-size: 1.4rem;
+            font-size: 1.2rem;
             font-weight: bold;
             cursor: pointer;
-            box-shadow: 0 4px 0 #FFB300;
-            transition: transform 0.1s, box-shadow 0.1s, background-color 0.2s;
-        }
-        .level-btn:active {
-            transform: translateY(2px);
-            box-shadow: 0 2px 0 #FFB300;
+            transition: transform 0.1s, box-shadow 0.1s;
         }
         
+        /* L1 Yellow */
+        .level-btn[data-level='1'] {
+            background-color: var(--color-secondary); 
+            box-shadow: 0 4px 0 #FFB300;
+        }
+        /* L2 Orange */
+        .level-btn[data-level='2'] {
+            background-color: var(--color-level-2);
+            box-shadow: 0 4px 0 #F57C00;
+        }
+        /* L3 Red */
+        .level-btn[data-level='3'] {
+            background-color: var(--color-level-3);
+            box-shadow: 0 4px 0 #D32F2F;
+            color: var(--color-text-light);
+        }
+
+        .level-btn:active {
+            transform: translateY(2px);
+            box-shadow: none; /* Shadow handled by specific level CSS above */
+        }
+        .level-btn[data-level='1']:active { box-shadow: 0 2px 0 #FFB300; }
+        .level-btn[data-level='2']:active { box-shadow: 0 2px 0 #F57C00; }
+        .level-btn[data-level='3']:active { box-shadow: 0 2px 0 #D32F2F; }
+
         /* Timer Bar */
         #timer-bar-container {
             width: 100%;
@@ -138,30 +160,42 @@
             align-items: center;
             border-radius: 5px;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: background-color 0.2s, opacity 0.2s;
             position: relative;
             overflow: hidden;
             border: 2px solid #E0E0E0;
+            opacity: 1;
+        }
+        
+        /* Tile State Styles */
+        .tile.selected {
+            background-color: #B2EBF2; /* Light Cyan for selected tiles */
+            border-color: #00BCD4;
+            opacity: 0.7;
+            cursor: default;
+        }
+        .tile.correct {
+            background-color: var(--color-correct); /* Green highlight for final answer */
+            border-color: #4CAF50;
+            opacity: 1;
+            cursor: default;
         }
         
         .tile-char-wrapper {
              font-size: calc(30px + 2vw); 
              font-weight: 900;
              color: var(--color-text-dark);
-             transform: rotate(var(--rotation));
-             transition: transform 0.2s ease-out;
              padding: 5px;
              line-height: 1;
         }
-
-        /* Correct/Answered Styles */
-        .tile.correct {
-            background-color: var(--color-secondary); /* Gold highlight */
-            border-color: #FFB300;
-        }
-        .tile.correct .tile-char-wrapper {
-            color: var(--color-text-dark); /* Dark text on Gold */
-            transform: rotate(0deg) !important; 
+        
+        /* Word Display Area */
+        #english-word-display {
+            font-size: 2rem;
+            font-weight: 900;
+            min-height: 2rem;
+            color: var(--color-primary);
+            margin: 0.5rem 0 0.5rem 0;
         }
 
         /* Next Button */
@@ -196,12 +230,12 @@
     <div class="container" id="main-container">
         <header>
             <h1>Word Trace 👑</h1>
-            <span class="version-tag">Version 3.1: The Pharaoh's Trace (Fixed)</span>
+            <span class="version-tag">Version 4.0: Sequential Spelling</span>
         </header>
 
         <div id="level-select-screen" class="screen active">
-            <h2>ค้นหาเส้นทางขุมทรัพย์คำศัพท์</h2>
-            <p>หมุนตัวอักษรเพื่อเปิดเผยคำศัพท์ที่ซ่อนอยู่</p>
+            <h2>สะกดคำศัพท์ตามลำดับ</h2>
+            <p>คลิกตัวอักษรเพื่อสะกดคำโจทย์ภาษาอังกฤษ</p>
             <div class="level-grid-select" id="level-grid-select">
                 </div>
         </div>
@@ -237,16 +271,21 @@
     <script>
         // --- DATA (Word Trace Questions) ---
         
-        function getRandomDistractorChar() {
+        // FIX 1: Ensure distractor characters are not in the target word
+        function getRandomDistractorChar(excludeChars = []) {
             const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-            return alphabet[Math.floor(Math.random() * alphabet.length)];
+            const availableChars = alphabet.split('').filter(char => !excludeChars.includes(char));
+            if (availableChars.length === 0) return 'Z'; // Fallback
+            return availableChars[Math.floor(Math.random() * availableChars.length)];
         }
 
+        // Generate tiles for the grid
         function generateTiles(word, minLength, gridSize) {
             const tiles = [];
             const tileCount = gridSize * gridSize;
             const wordChars = word.split('');
-            const wordLength = word.length;
+            // FIX 1: Characters to exclude from distractors
+            const excludeChars = [...new Set(wordChars)]; 
 
             const pathIndices = [];
             while(pathIndices.length < wordLength) {
@@ -260,25 +299,23 @@
                 const charIndex = pathIndices.indexOf(i);
                 
                 if (charIndex !== -1) {
+                    // Correct character
                     tiles.push({
                         char: wordChars[charIndex],
                         order: charIndex + 1,
-                        correctRotation: 0,
-                        currentRotation: [0, 90, 180, 270][Math.floor(Math.random() * 4)]
                     });
                 } else {
+                    // Distractor character (not in word)
                     tiles.push({
-                        char: getRandomDistractorChar(),
+                        char: getRandomDistractorChar(excludeChars),
                         order: 0,
-                        correctRotation: 0, 
-                        currentRotation: [0, 90, 180, 270][Math.floor(Math.random() * 4)]
                     });
                 }
             }
             return tiles;
         }
 
-        // --- FIX 3: COMPLETE 150 WORDS LIST ---
+        // --- FIX 3: COMPLETE 150 WORDS LIST (Retained from previous version) ---
 
         const wordData = {
             // Level 1: Beginner (3x3 Grid, 3-4 Letters) - 50 Words
@@ -308,7 +345,6 @@
                 { correctWord: "ROAD", thaiPrompt: "ถนน", timeLimit: 15 },
                 { correctWord: "FIRE", thaiPrompt: "ไฟ", timeLimit: 15 },
                 { correctWord: "LAKE", thaiPrompt: "ทะเลสาบ", timeLimit: 15 },
-                // Added 25 more for L1 (Total 50)
                 { correctWord: "WANT", thaiPrompt: "ต้องการ", timeLimit: 15 },
                 { correctWord: "KNOW", thaiPrompt: "รู้", timeLimit: 12 },
                 { correctWord: "LOVE", thaiPrompt: "รัก", timeLimit: 12 },
@@ -343,7 +379,6 @@
                 { correctWord: "TIGER", thaiPrompt: "เสือ", timeLimit: 18 },
                 { correctWord: "CHAIR", thaiPrompt: "เก้าอี้", timeLimit: 18 },
                 { correctWord: "YELLOW", thaiPrompt: "สีเหลือง", timeLimit: 20 },
-                // Added 45 more for L2 (Total 50)
                 { correctWord: "SLEEP", thaiPrompt: "นอนหลับ", timeLimit: 18 },
                 { correctWord: "FAMILY", thaiPrompt: "ครอบครัว", timeLimit: 20 },
                 { correctWord: "BROTHER", thaiPrompt: "พี่ชาย/น้องชาย", timeLimit: 20 },
@@ -397,7 +432,6 @@
                 { correctWord: "COMPUTER", thaiPrompt: "คอมพิวเตอร์", timeLimit: 25 },
                 { correctWord: "LIBRARY", thaiPrompt: "ห้องสมุด", timeLimit: 22 },
                 { correctWord: "UNIVERSITY", thaiPrompt: "มหาวิทยาลัย", timeLimit: 30 },
-                // Added 46 more for L3 (Total 50)
                 { correctWord: "WEATHER", thaiPrompt: "สภาพอากาศ", timeLimit: 25 },
                 { correctWord: "HOSPITAL", thaiPrompt: "โรงพยาบาล", timeLimit: 25 },
                 { correctWord: "BUILDING", thaiPrompt: "อาคาร", timeLimit: 22 },
@@ -458,7 +492,7 @@
             ...q, tiles: generateTiles(q.correctWord, q.correctWord.length, 4)
         }));
         const level3Questions = wordData.level3Words.map(q => {
-            const gridSize = q.correctWord.length > 9 ? 6 : 5; // Use 6x6 for very long words
+            const gridSize = q.correctWord.length > 9 ? 6 : 5;
             return {
                 ...q, tiles: generateTiles(q.correctWord, q.correctWord.length, gridSize), gridSize: gridSize
             };
@@ -466,24 +500,9 @@
 
 
         const allQuizData = [
-            { 
-                level: 1, 
-                title: "Beginner (3x3 Grid, 3-4 Letters) - 50 Words", 
-                gridSize: 3, 
-                questions: level1Questions
-            },
-            { 
-                level: 2, 
-                title: "Intermediate (4x4 Grid, 5-6 Letters) - 50 Words", 
-                gridSize: 4, 
-                questions: level2Questions
-            },
-            { 
-                level: 3, 
-                title: "Advanced (5x5/6x6 Grid, 7-10+ Letters) - 50 Words", 
-                gridSize: 5, 
-                questions: level3Questions
-            }
+            { level: 1, title: "Beginner (3x3 Grid)", gridSize: 3, questions: level1Questions },
+            { level: 2, title: "Intermediate (4x4 Grid)", gridSize: 4, questions: level2Questions },
+            { level: 3, title: "Advanced (5x5/6x6 Grid)", gridSize: 5, questions: level3Questions }
         ];
 
         // --- ELEMENTS ---
@@ -509,10 +528,13 @@
         let timeRemaining = 0;
         let totalTime = 0;
         let isGameActive = false;
-        let totalPathTiles = 0;
         let utterance = null; 
+        
+        // FIX 1: New state for sequential spelling
+        let currentGuessWord = "";
+        let nextExpectedChar = ""; 
 
-        // --- TTS & UTILITY FUNCTIONS (REVISED) ---
+        // --- TTS & UTILITY FUNCTIONS ---
         function setupSpeech() {
             if ('speechSynthesis' in window) {
                 utterance = new SpeechSynthesisUtterance();
@@ -541,17 +563,18 @@
             }
         }
         
-        // FIX 1: Changed delay to 0.5s (500ms)
+        // FIX 1: Changed delay to 0.5s (500ms) and handles all flow
         function speakAnswer(englishWord, thaiMeaning) {
             
             const onThaiSpeakEnd = () => {
                  utterance.onend = null; 
                  setTimeout(() => {
-                     if (!nextBtn.disabled) { 
+                     // Check if not already going to main screen
+                     if (nextBtn.textContent.includes('ข้อถัดไป')) { 
                          currentQuizIndex++;
                          nextQuestion(); // ไปข้อถัดไปอัตโนมัติ
                      }
-                 }, 500); // 0.5 วินาที
+                 }, 500); 
             };
             
             const onEnglishSpeakEnd = () => {
@@ -572,7 +595,7 @@
         }
 
         function updateStatusBar() {
-            levelTitleEl.textContent = `Level ${currentLevelData.level}: ${currentLevelData.title.split(' ')[0]}`;
+            levelTitleEl.textContent = `Level ${currentLevelData.level}: ${currentLevelData.title.split('(')[0].trim()}`;
             qCountEl.textContent = `ข้อ: ${currentQuizIndex + 1}/${currentLevelData.questions.length}`; 
             scoreEl.textContent = `คะแนน: ${score}`;
         }
@@ -611,43 +634,69 @@
             }
         }
         
-        // --- GAME GRID LOGIC ---
+        // --- GAME GRID LOGIC (Sequential Spelling) ---
         
-        // FIX 2: Synchronize rotation data
+        function resetGuess() {
+            const q = currentLevelData.questions[currentQuizIndex];
+            currentGuessWord = "";
+            nextExpectedChar = q.correctWord.charAt(0);
+            englishWordDisplayEl.textContent = "";
+            
+            // Clear selected status from all tiles
+            gameGridEl.querySelectorAll('.tile.selected').forEach(tile => {
+                tile.classList.remove('selected');
+                tile.style.cursor = 'pointer';
+            });
+            
+            // Clear message area after a short delay
+            setTimeout(() => {
+                if (!isAnswered) { // Only update if game is still active
+                    messageAreaEl.textContent = 'สะกดคำโจทย์ตามลำดับ...';
+                    messageAreaEl.style.color = 'var(--color-text-dark)';
+                }
+            }, 1000);
+        }
+
         function handleTileClick(event) {
-            if (!isGameActive || isAnswered) return;
+            // FIX 1: New Click Logic
+            if (!isGameActive || isAnswered || event.currentTarget.classList.contains('selected')) return;
 
             const tileEl = event.currentTarget;
-            let currentRot = parseInt(tileEl.getAttribute('data-rotation'));
+            const clickedChar = tileEl.querySelector('.tile-char-wrapper').textContent;
             
-            currentRot = (currentRot + 90) % 360; 
-            tileEl.setAttribute('data-rotation', currentRot);
-            tileEl.querySelector('.tile-char-wrapper').style.setProperty('--rotation', `${currentRot}deg`);
-
-            // FIX 2: Synchronize rotation data with the state
-            const index = parseInt(tileEl.getAttribute('data-index'));
-            currentLevelData.questions[currentQuizIndex].tiles[index].currentRotation = currentRot;
-
-            checkFlow();
+            // Check if the clicked character is the next expected character
+            if (clickedChar === nextExpectedChar) {
+                currentGuessWord += clickedChar;
+                tileEl.classList.add('selected');
+                tileEl.style.cursor = 'default';
+                
+                // Update word display dynamically
+                englishWordDisplayEl.textContent = currentGuessWord;
+                
+                // Check for correct answer
+                checkFlow();
+                
+            } else {
+                // Wrong click: reset the guess and show temporary error
+                messageAreaEl.textContent = `❌ ผิดพลาด! ต้องเริ่มสะกดจาก '${nextExpectedChar}' ใหม่`;
+                messageAreaEl.style.color = 'var(--color-wrong)';
+                resetGuess();
+            }
         }
 
         function createGrid(q, gridSize) {
             gameGridEl.innerHTML = '';
             gameGridEl.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
-            
-            totalPathTiles = q.correctWord.length;
 
             q.tiles.forEach((tileData, index) => {
                 const tileEl = document.createElement('div');
                 tileEl.className = 'tile';
                 tileEl.setAttribute('data-index', index);
-                tileEl.setAttribute('data-rotation', tileData.currentRotation);
                 tileEl.setAttribute('data-order', tileData.order); 
                 
                 const charWrapper = document.createElement('div');
                 charWrapper.className = 'tile-char-wrapper';
                 charWrapper.textContent = tileData.char;
-                charWrapper.style.setProperty('--rotation', `${tileData.currentRotation}deg`);
                 
                 tileEl.appendChild(charWrapper);
                 tileEl.addEventListener('click', handleTileClick);
@@ -655,59 +704,51 @@
             });
         }
         
-        // FIX 1 Helper: Show correct answer when time is up
-        function highlightCorrectAnswer(tilesData) {
+        // FIX 1 Helper: Highlight all tiles when game ends (correct or time up)
+        function highlightCorrectAnswer() {
+            const q = currentLevelData.questions[currentQuizIndex];
             const allTiles = gameGridEl.querySelectorAll('.tile');
-            allTiles.forEach((tileEl, index) => {
+            
+            allTiles.forEach((tileEl) => {
                 const order = parseInt(tileEl.getAttribute('data-order'));
                 if (order > 0) {
-                    // 1. Highlight the tile
                     tileEl.classList.add('correct');
-                    // 2. Force rotate to the correct position (0 degrees)
-                    tileEl.setAttribute('data-rotation', 0);
-                    tileEl.querySelector('.tile-char-wrapper').style.setProperty('--rotation', `0deg`);
-                    // 3. Update the data structure for consistency
-                    tilesData[index].currentRotation = 0;
+                    tileEl.classList.remove('selected');
+                } else {
+                    // Dim distractors
+                    tileEl.style.opacity = '0.4'; 
                 }
+                tileEl.style.cursor = 'default';
             });
         }
 
         function checkFlow(timeUp = false) {
             if (isAnswered) return;
 
-            let correctTiles = 0;
-            const allTiles = gameGridEl.querySelectorAll('.tile');
             const q = currentLevelData.questions[currentQuizIndex];
-            
-            allTiles.forEach((tileEl, index) => {
-                const order = parseInt(tileEl.getAttribute('data-order'));
-                if (order > 0) {
-                    const currentRot = parseInt(tileEl.getAttribute('data-rotation'));
-                    const correctRot = q.tiles[index].correctRotation; // Always 0
-                    
-                    if (currentRot === correctRot) {
-                        correctTiles++;
-                        tileEl.classList.add('correct');
-                    } else {
-                        tileEl.classList.remove('correct');
-                    }
-                }
-            });
+            const correctWord = q.correctWord;
+            const currentLength = currentGuessWord.length;
 
-            if (correctTiles === totalPathTiles) {
+            if (currentLength < correctWord.length) {
+                // Set the next expected character
+                nextExpectedChar = correctWord.charAt(currentLength);
+            }
+            
+            if (currentGuessWord === correctWord) {
+                // Correct answer
                 isAnswered = true;
                 score++;
                 messageAreaEl.textContent = `✅ สำเร็จ! คำศัพท์คือ ${q.correctWord}`;
                 messageAreaEl.style.color = 'var(--color-correct)';
+                highlightCorrectAnswer();
                 endQuestion(true);
             } else if (timeUp) {
+                // Time is up
                 isAnswered = true;
                 messageAreaEl.textContent = `⏰ หมดเวลา! คำศัพท์คือ ${q.correctWord}`;
                 messageAreaEl.style.color = 'var(--color-wrong)';
                 
-                // FIX 1: Show the answer and highlight the tiles
-                highlightCorrectAnswer(q.tiles);
-                
+                highlightCorrectAnswer();
                 endQuestion(false);
             }
         }
@@ -716,8 +757,10 @@
 
         function createLevelButtons() {
              levelGridSelectEl.innerHTML = '';
+            
             const levelData = allQuizData.map(data => ({
                 ...data,
+                // Split 50 questions into 10 sub-levels of 5 questions each
                 subLevels: Array.from({ length: 10 }, (_, i) => ({
                     id: `${data.level}-${i + 1}`,
                     title: `ชุดที่ ${i + 1}`,
@@ -726,17 +769,16 @@
             }));
 
             levelData.forEach(data => {
-                data.subLevels.forEach(subLevel => {
+                data.subLevels.forEach((subLevel, i) => {
                     const btn = document.createElement('button');
                     btn.className = 'level-btn';
-                    btn.textContent = `L${data.level} - ${subLevel.title}`;
                     
-                    const titleSpan = document.createElement('span');
-                    titleSpan.className = 'level-btn-title';
-                    titleSpan.textContent = subLevel.title.replace('ชุดที่', 'Level'); 
+                    // FIX 2: New button text format
+                    btn.textContent = `Level ${data.level}-${i + 1}`;
                     
-                    btn.appendChild(titleSpan);
                     btn.setAttribute('data-level-id', subLevel.id);
+                    // FIX 2: Add data-level attribute for CSS coloring
+                    btn.setAttribute('data-level', data.level); 
                     
                     btn.addEventListener('click', () => {
                         startGame(data, subLevel);
@@ -750,7 +792,7 @@
             currentLevelData = {
                 ...levelData,
                 questions: subLevelData.questions,
-                title: `${levelData.title.split(' ')[0]} ${subLevelData.title}`
+                title: `${levelData.title.split('(')[0].trim()} ชุด ${subLevelData.title.split(' ')[1]}`
             }; 
             currentQuizIndex = 0;
             score = 0;
@@ -770,18 +812,15 @@
             isAnswered = false;
             nextBtn.disabled = true;
             englishWordDisplayEl.textContent = ''; 
-            messageAreaEl.textContent = 'หมุนตัวอักษรเพื่อสร้างคำ...';
+            messageAreaEl.textContent = 'สะกดคำโจทย์ตามลำดับ...';
             messageAreaEl.style.color = 'var(--color-text-dark)';
 
             updateStatusBar();
             const q = currentLevelData.questions[currentQuizIndex];
             
             let gridSize = currentLevelData.gridSize;
-            // Use specific gridSize if it was defined in level3Questions (e.g., for 6x6)
             if (q.gridSize) { 
                 gridSize = q.gridSize;
-            } else if (currentLevelData.level === 3 && q.correctWord.length > 9) {
-                gridSize = 6;
             }
 
             setupQuestion(q, gridSize);
@@ -791,6 +830,8 @@
         function setupQuestion(q, gridSize) {
             thaiPromptEl.textContent = `โจทย์: ${q.thaiPrompt}`;
             createGrid(q, gridSize);
+            // FIX 1: Initialize guess state
+            resetGuess(); 
         }
         
         function endQuestion(isCorrect) {
@@ -801,6 +842,7 @@
             
             const q = currentLevelData.questions[currentQuizIndex];
             
+            // Set the full correct word display
             englishWordDisplayEl.textContent = `${q.correctWord} (${q.thaiPrompt})`;
             
             // speakAnswer จะจัดการการพูดและการเปลี่ยนข้อถัดไปโดยอัตโนมัติ
@@ -823,9 +865,7 @@
                 window.speechSynthesis.cancel();
                 showScreen('level-select-screen');
                 nextBtn.textContent = 'ข้อถัดไป ⏭️/กลับหน้าหลัก';
-                // ล้าง onclick handler เดิม
-                nextBtn.onclick = null; 
-                // Restore the original event listener (which is handled in DOMContentLoaded)
+                nextBtn.onclick = null;
             };
         }
 
@@ -837,9 +877,7 @@
 
             // Event listener สำหรับการกดปุ่มข้อถัดไปเอง (Manual Next)
             nextBtn.addEventListener('click', () => {
-                 // ถ้าปุ่มเปลี่ยนเป็น 'กลับหน้าหลัก' ให้ทำตาม Logic ใน endGame()
                  if (nextBtn.textContent.includes('กลับหน้าหลัก')) {
-                     // The logic is already handled by nextBtn.onclick set in endGame()
                      return;
                  }
 
