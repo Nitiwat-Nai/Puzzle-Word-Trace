@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Word Trace 5.0: Final Version 👑</title>
+    <title>Word Trace 5.1: Button Fixes 👑</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         /* Global & Theme Setup */
@@ -158,7 +158,7 @@
             cursor: pointer;
             box-shadow: 0 4px 0 #0D47A1;
             transition: all 0.1s;
-            width: 100%; /* Default full width */
+            width: 100%; 
         }
 
         .control-btn:active {
@@ -166,14 +166,14 @@
             box-shadow: 0 2px 0 #0D47A1;
         }
 
-        #paused-controls {
+        #paused-controls, #end-level-controls {
             display: flex;
             gap: 10px;
             width: 100%;
         }
 
-        #paused-controls .control-btn {
-            width: 50%; /* Half width for the two pause buttons */
+        #paused-controls .control-btn, #end-level-controls .control-btn {
+            width: 50%; /* Half width for the two buttons */
             padding: 1rem 0.5rem;
             font-size: 1.1rem;
         }
@@ -187,12 +187,13 @@
             box-shadow: 0 2px 0 #455A64;
         }
 
-        /* Style for the 'End Game' back button */
-        .full-width-next-btn {
-            width: 100% !important;
-            background-color: var(--color-primary) !important;
-            box-shadow: 0 4px 0 #0D47A1 !important;
-            display: block !important;
+        .success-btn {
+            background-color: var(--color-correct);
+            box-shadow: 0 4px 0 #388E3C;
+        }
+        
+        .success-btn:active {
+            box-shadow: 0 2px 0 #388E3C;
         }
 
     </style>
@@ -202,7 +203,7 @@
     <div class="container" id="main-container">
         <header>
             <h1>Word Trace 👑</h1>
-            <span class="version-tag">Version 5.0: Final Game Logic</span>
+            <span class="version-tag">Version 5.1: Button Fixes</span>
         </header>
 
         <div id="level-select-screen" class="screen active">
@@ -241,7 +242,12 @@
                 
                 <div id="paused-controls" style="display: none;">
                     <button id="resume-btn" class="control-btn">เล่นต่อ ▶️</button>
-                    <button id="main-menu-btn" class="control-btn secondary-btn">กลับหน้าหลัก 🏠</button>
+                    <button id="main-menu-btn-pause" class="control-btn secondary-btn">กลับหน้าหลัก 🏠</button>
+                </div>
+                
+                <div id="end-level-controls" style="display: none;">
+                    <button id="play-again-btn" class="control-btn success-btn">เล่นใหม่ (ชุดนี้) 🔄</button>
+                    <button id="main-menu-btn-end" class="control-btn secondary-btn">กลับหน้าหลัก 🏠</button>
                 </div>
                 
                 <button id="next-q-btn" class="control-btn" style="display: none;">ข้อถัดไป ⏭️</button>
@@ -390,12 +396,16 @@
         const gameControlsEl = document.getElementById('game-controls');
         const pauseBtn = document.getElementById('pause-btn');
         const resumeBtn = document.getElementById('resume-btn');
-        const mainMenuBtn = document.getElementById('main-menu-btn');
-        const nextQBtn = document.getElementById('next-q-btn'); // For manual next
+        const mainMenuBtnPause = document.getElementById('main-menu-btn-pause'); // New button for pause screen
+        const mainMenuBtnEnd = document.getElementById('main-menu-btn-end'); // New button for end screen
+        const playAgainBtn = document.getElementById('play-again-btn'); // New button for end screen
+        const nextQBtn = document.getElementById('next-q-btn'); 
         const pausedControlsEl = document.getElementById('paused-controls');
+        const endLevelControlsEl = document.getElementById('end-level-controls'); // New control block
 
         // --- GAME STATE ---
         let currentLevelData = null;
+        let originalLevelData = null; // To store data for "Play Again"
         let currentQuizIndex = 0;
         let score = 0;
         let isAnswered = false;
@@ -403,7 +413,7 @@
         let timeRemaining = 0;
         let totalTime = 0;
         let isGameActive = false;
-        let isPaused = false; // New state for pause
+        let isPaused = false; 
         let utterance = null; 
         
         let currentGuessWord = "";
@@ -443,12 +453,12 @@
             
             const onThaiSpeakEnd = () => {
                  utterance.onend = null; 
-                 // If game over, wait for user click. Otherwise, auto-advance.
+                 
                  if (currentQuizIndex + 1 < currentLevelData.questions.length) {
                       setTimeout(() => {
                         currentQuizIndex++;
-                        nextQuestion(); // ไปข้อถัดไปอัตโนมัติ
-                     }, 500); // 0.5 วินาที
+                        nextQuestion(); 
+                     }, 500); 
                  } else {
                      // Last question answered, trigger end game flow
                      endGame();
@@ -478,7 +488,7 @@
             scoreEl.textContent = `คะแนน: ${score}`;
         }
         
-        // --- TIMER LOGIC (Modified to support resume) ---
+        // --- TIMER LOGIC ---
         function startTimer(duration, isResuming = false) {
             if (!isResuming) {
                 clearInterval(timerInterval);
@@ -492,6 +502,7 @@
             // UI Change for Active State
             pauseBtn.style.display = 'block';
             pausedControlsEl.style.display = 'none';
+            endLevelControlsEl.style.display = 'none';
             nextQBtn.style.display = 'none';
 
             updateTimerBar();
@@ -524,7 +535,8 @@
             
             // UI Change for Pause State
             pauseBtn.style.display = 'none';
-            pausedControlsEl.style.display = 'flex'; // Show two control buttons
+            pausedControlsEl.style.display = 'flex'; // Show Resume and Main Menu
+            endLevelControlsEl.style.display = 'none';
         }
 
         function resumeGame() {
@@ -532,7 +544,7 @@
             
             startTimer(timeRemaining, true); // Resume from remaining time
             
-            // UI Change for Active State (Handled in startTimer, but for clarity)
+            // UI Change for Active State 
             pauseBtn.style.display = 'block';
             pausedControlsEl.style.display = 'none';
         }
@@ -540,15 +552,27 @@
         function goToLevelSelect() {
             window.speechSynthesis.cancel();
             currentLevelData = null; 
+            originalLevelData = null; // Clear original data as well
             score = 0;
             
             // Reset control visibility
             pauseBtn.style.display = 'none';
             pausedControlsEl.style.display = 'none';
+            endLevelControlsEl.style.display = 'none';
             nextQBtn.style.display = 'none';
-            mainMenuBtn.classList.remove('full-width-next-btn'); // Clean up end game style
 
             showScreen('level-select-screen');
+        }
+        
+        function playAgainSameLevel() {
+            if (!originalLevelData) {
+                 goToLevelSelect(); // Safety check
+                 return;
+            }
+            
+            // Re-use original LevelData and restart
+            const { levelData: ld, subLevelData: sld } = originalLevelData;
+            startGame(ld, sld, true); // Pass true to indicate restart
         }
 
         function updateTimerBar() {
@@ -623,7 +647,6 @@
             });
         }
         
-        // Highlight all tiles when game ends
         function highlightCorrectAnswer() {
             const allTiles = gameGridEl.querySelectorAll('.tile');
             
@@ -675,11 +698,12 @@
             const levelData = allQuizData.map(data => ({
                 ...data,
                 // Split 50 questions into 5 sub-levels of 10 questions each
-                subLevels: Array.from({ length: 5 }, (_, i) => ({ // length: 5
+                subLevels: Array.from({ length: 5 }, (_, i) => ({ 
                     id: `${data.level}-${i + 1}`,
                     title: `ชุดที่ ${i + 1}`,
-                    questions: data.questions.slice(i * 10, (i + 1) * 10), // slice by 10
-                    index: i
+                    questions: data.questions.slice(i * 10, (i + 1) * 10), 
+                    index: i,
+                    originalLevel: data, // Keep reference to parent
                 }))
             }));
 
@@ -688,7 +712,6 @@
                     const btn = document.createElement('button');
                     btn.className = 'level-btn';
                     
-                    // Display: Level X-Y
                     btn.textContent = `Level ${data.level}-${i + 1}`;
                     
                     btn.setAttribute('data-level-id', subLevel.id);
@@ -702,7 +725,12 @@
             });
         }
 
-        function startGame(levelData, subLevelData) {
+        function startGame(levelData, subLevelData, isRestart = false) {
+            // Save the original configuration for "Play Again" button
+            if (!isRestart) {
+                originalLevelData = { levelData, subLevelData };
+            }
+            
             currentLevelData = {
                 ...levelData,
                 questions: subLevelData.questions,
@@ -724,8 +752,6 @@
             }
 
             if (currentQuizIndex >= currentLevelData.questions.length) {
-                // If the flow reaches here, it means the last question finished,
-                // but the auto-advance logic didn't trigger endGame(). Call it explicitly.
                 endGame();
                 return;
             }
@@ -736,6 +762,7 @@
             // Reset control visibility for new question
             pauseBtn.style.display = 'block';
             pausedControlsEl.style.display = 'none';
+            endLevelControlsEl.style.display = 'none';
             nextQBtn.style.display = 'none';
 
             updateStatusBar();
@@ -760,6 +787,7 @@
             // UI Change for End State: Hide all game controls (waiting for auto-next/endGame)
             pauseBtn.style.display = 'none';
             pausedControlsEl.style.display = 'none';
+            endLevelControlsEl.style.display = 'none';
             nextQBtn.style.display = 'none';
             
             updateStatusBar();
@@ -775,24 +803,20 @@
         function endGame() {
             stopTimer(); 
             
-            levelTitleEl.textContent = `จบ Level ${currentLevelData.level}-${currentLevelData.subLevelIndex + 1}!`;
+            const levelTitleText = `Level ${currentLevelData.level}-${currentLevelData.subLevelIndex + 1}`;
+            levelTitleEl.textContent = `จบ ${levelTitleText}!`;
             qCountEl.textContent = '';
             
             messageAreaEl.textContent = `คุณทำคะแนนได้ ${score}/${currentLevelData.questions.length} คะแนน`;
             messageAreaEl.style.fontSize = '1.8rem';
             messageAreaEl.style.color = score >= 0.8 * currentLevelData.questions.length ? 'var(--color-correct)' : 'var(--color-wrong)';
 
-            // UI Change for Game Over State: Show only full-width 'Back to Main' button
+            // UI Change for Game Over State: Show Play Again and Main Menu buttons
             pauseBtn.style.display = 'none';
             pausedControlsEl.style.display = 'none';
+            
+            endLevelControlsEl.style.display = 'flex'; // Show new end controls
             nextQBtn.style.display = 'none';
-            
-            // Re-purpose mainMenuBtn for the final full-width button
-            mainMenuBtn.textContent = 'กลับหน้าหลัก (Level Selection) 🏠';
-            mainMenuBtn.style.display = 'block'; 
-            mainMenuBtn.classList.add('full-width-next-btn'); 
-            
-            // The click handler is already bound to goToLevelSelect in the initial setup.
         }
 
 
@@ -805,13 +829,13 @@
             // Bind new button actions
             pauseBtn.addEventListener('click', pauseGame);
             resumeBtn.addEventListener('click', resumeGame);
-            mainMenuBtn.addEventListener('click', goToLevelSelect); 
             
-            // Ensure mainMenuBtn doesn't have the full-width style by default
-            mainMenuBtn.style.display = 'none'; 
+            // New binding for the main menu button inside the pause screen
+            mainMenuBtnPause.addEventListener('click', goToLevelSelect); 
             
-            // nextQBtn logic can be implemented here if you need a manual override after TTS, 
-            // but for now, it's hidden as auto-next is primary.
+            // New bindings for the end level screen
+            mainMenuBtnEnd.addEventListener('click', goToLevelSelect);
+            playAgainBtn.addEventListener('click', playAgainSameLevel);
         });
     </script>
 </body>
