@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Word Trace 4.0: Sequential Spelling 👑 (Final Working)</title>
+    <title>Word Trace 5.0: Final Version 👑</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         /* Global & Theme Setup */
@@ -89,7 +89,7 @@
         
         .level-btn[data-level='1'] { background-color: var(--color-secondary); box-shadow: 0 4px 0 #FFB300; }
         .level-btn[data-level='2'] { background-color: var(--color-level-2); box-shadow: 0 4px 0 #F57C00; }
-        .level-btn[data-level='3'] { background-color: var(--color-level-3); box-shadow: 0 4px 0 #D32F2F; color: var(--color-text-light); }
+        .level-btn[data-level='3'] { background-color: var(--color-level-3); color: var(--color-text-light); box-shadow: 0 4px 0 #D32F2F; }
 
         .level-btn:active { transform: translateY(2px); box-shadow: none; }
         .level-btn[data-level='1']:active { box-shadow: 0 2px 0 #FFB300; }
@@ -141,12 +141,16 @@
         /* Word Display Area */
         #english-word-display { font-size: 2rem; font-weight: 900; min-height: 2rem; color: var(--color-primary); margin: 0.5rem 0 0.5rem 0; }
 
-        /* Next Button */
-        #next-btn {
+        /* --- New Game Control Button Styles --- */
+        #game-controls {
+            margin-top: 2rem;
+            width: 100%;
+        }
+
+        .control-btn {
             background-color: var(--color-primary);
             color: var(--color-text-light);
             border: none;
-            width: 100%; 
             padding: 1rem;
             border-radius: 50px;
             font-size: 1.2rem;
@@ -154,11 +158,43 @@
             cursor: pointer;
             box-shadow: 0 4px 0 #0D47A1;
             transition: all 0.1s;
-            margin-top: 2rem;
+            width: 100%; /* Default full width */
         }
-        #next-btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 #0D47A1; }
-        #next-btn:disabled { background-color: #B0BEC5; box-shadow: 0 4px 0 #90A4AE; cursor: default; }
-        
+
+        .control-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #0D47A1;
+        }
+
+        #paused-controls {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+
+        #paused-controls .control-btn {
+            width: 50%; /* Half width for the two pause buttons */
+            padding: 1rem 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .secondary-btn {
+            background-color: #607D8B; /* Blue Grey for secondary/back button */
+            box-shadow: 0 4px 0 #455A64;
+        }
+
+        .secondary-btn:active {
+            box-shadow: 0 2px 0 #455A64;
+        }
+
+        /* Style for the 'End Game' back button */
+        .full-width-next-btn {
+            width: 100% !important;
+            background-color: var(--color-primary) !important;
+            box-shadow: 0 4px 0 #0D47A1 !important;
+            display: block !important;
+        }
+
     </style>
 </head>
 <body>
@@ -166,12 +202,12 @@
     <div class="container" id="main-container">
         <header>
             <h1>Word Trace 👑</h1>
-            <span class="version-tag">Version 4.0: Sequential Spelling (Final Working)</span>
+            <span class="version-tag">Version 5.0: Final Game Logic</span>
         </header>
 
         <div id="level-select-screen" class="screen active">
             <h2>สะกดคำศัพท์ตามลำดับ</h2>
-            <p>คลิกตัวอักษรเพื่อสะกดคำโจทย์ภาษาอังกฤษ</p>
+            <p>คลิกตัวอักษรเพื่อสะกดคำโจทย์ภาษาอังกฤษ (ชุดละ 10 ข้อ)</p>
             <div class="level-grid-select" id="level-grid-select">
                 </div>
         </div>
@@ -200,7 +236,16 @@
                 
             </div>
             
-            <button id="next-btn" disabled>ข้อถัดไป ⏭️/กลับหน้าหลัก</button>
+            <div id="game-controls">
+                <button id="pause-btn" class="control-btn" style="display: none;">หยุด ⏸️</button>
+                
+                <div id="paused-controls" style="display: none;">
+                    <button id="resume-btn" class="control-btn">เล่นต่อ ▶️</button>
+                    <button id="main-menu-btn" class="control-btn secondary-btn">กลับหน้าหลัก 🏠</button>
+                </div>
+                
+                <button id="next-q-btn" class="control-btn" style="display: none;">ข้อถัดไป ⏭️</button>
+            </div>
         </div>
     </div>
 
@@ -214,7 +259,6 @@
             return availableChars[Math.floor(Math.random() * availableChars.length)];
         }
 
-        // Generate tiles for the grid
         function generateTiles(word, minLength, gridSize) {
             const tiles = [];
             const tileCount = gridSize * gridSize;
@@ -248,9 +292,14 @@
             return tiles;
         }
 
-        // --- COMPLETE 150 WORDS LIST ---
+        // --- COMPLETE 150 WORDS LIST (Time Limits are 3s shorter here) ---
+        
+        // Function to apply time reduction (3 seconds)
+        function adjustTimeLimit(originalTime) {
+            return Math.max(3, originalTime - 3); // Ensure time doesn't go below 3 seconds
+        }
 
-        const wordData = {
+        const rawWordData = {
             // Level 1: Beginner (3x3 Grid, 3-4 Letters) - 50 Words
             level1Words: [
                 { correctWord: "CAT", thaiPrompt: "แมว", timeLimit: 12 }, { correctWord: "DOG", thaiPrompt: "สุนัข", timeLimit: 12 }, { correctWord: "SUN", thaiPrompt: "พระอาทิตย์", timeLimit: 12 }, { correctWord: "MOON", thaiPrompt: "พระจันทร์", timeLimit: 15 }, { correctWord: "FISH", thaiPrompt: "ปลา", timeLimit: 15 },
@@ -294,17 +343,26 @@
             ]
         };
         
-        // Map word lists to full question objects
-        const level1Questions = wordData.level1Words.map(q => ({
-            ...q, tiles: generateTiles(q.correctWord, q.correctWord.length, 3), gridSize: 3 
+        // Map word lists to full question objects with adjusted time
+        const level1Questions = rawWordData.level1Words.map(q => ({
+            ...q, 
+            tiles: generateTiles(q.correctWord, q.correctWord.length, 3), 
+            gridSize: 3,
+            timeLimit: adjustTimeLimit(q.timeLimit) // Apply reduction
         }));
-        const level2Questions = wordData.level2Words.map(q => ({
-            ...q, tiles: generateTiles(q.correctWord, q.correctWord.length, 4), gridSize: 4
+        const level2Questions = rawWordData.level2Words.map(q => ({
+            ...q, 
+            tiles: generateTiles(q.correctWord, q.correctWord.length, 4), 
+            gridSize: 4,
+            timeLimit: adjustTimeLimit(q.timeLimit) // Apply reduction
         }));
-        const level3Questions = wordData.level3Words.map(q => {
+        const level3Questions = rawWordData.level3Words.map(q => {
             const gridSize = q.correctWord.length > 9 ? 6 : 5;
             return {
-                ...q, tiles: generateTiles(q.correctWord, q.correctWord.length, gridSize), gridSize: gridSize
+                ...q, 
+                tiles: generateTiles(q.correctWord, q.correctWord.length, gridSize), 
+                gridSize: gridSize,
+                timeLimit: adjustTimeLimit(q.timeLimit) // Apply reduction
             };
         });
 
@@ -326,8 +384,15 @@
         const englishWordDisplayEl = document.getElementById('english-word-display');
         const gameGridEl = document.getElementById('game-grid');
         const timerBarEl = document.getElementById('timer-bar');
-        const nextBtn = document.getElementById('next-btn');
         const messageAreaEl = document.getElementById('message-area');
+        
+        // New Button Elements
+        const gameControlsEl = document.getElementById('game-controls');
+        const pauseBtn = document.getElementById('pause-btn');
+        const resumeBtn = document.getElementById('resume-btn');
+        const mainMenuBtn = document.getElementById('main-menu-btn');
+        const nextQBtn = document.getElementById('next-q-btn'); // For manual next
+        const pausedControlsEl = document.getElementById('paused-controls');
 
         // --- GAME STATE ---
         let currentLevelData = null;
@@ -338,6 +403,7 @@
         let timeRemaining = 0;
         let totalTime = 0;
         let isGameActive = false;
+        let isPaused = false; // New state for pause
         let utterance = null; 
         
         let currentGuessWord = "";
@@ -372,18 +438,21 @@
             }
         }
         
-        // Auto-next logic: implemented here
+        // Auto-next logic
         function speakAnswer(englishWord, thaiMeaning) {
             
             const onThaiSpeakEnd = () => {
                  utterance.onend = null; 
-                 setTimeout(() => {
-                     // Check if game is still running (not back to main screen)
-                     if (currentLevelData && currentQuizIndex < currentLevelData.questions.length && nextBtn.textContent.includes('ข้อถัดไป')) { 
-                         currentQuizIndex++;
-                         nextQuestion(); // ไปข้อถัดไปอัตโนมัติ
-                     }
-                 }, 500); // 0.5 วินาที
+                 // If game over, wait for user click. Otherwise, auto-advance.
+                 if (currentQuizIndex + 1 < currentLevelData.questions.length) {
+                      setTimeout(() => {
+                        currentQuizIndex++;
+                        nextQuestion(); // ไปข้อถัดไปอัตโนมัติ
+                     }, 500); // 0.5 วินาที
+                 } else {
+                     // Last question answered, trigger end game flow
+                     endGame();
+                 }
             };
             
             const onEnglishSpeakEnd = () => {
@@ -404,19 +473,27 @@
         }
 
         function updateStatusBar() {
-             // currentLevelData.title is "Beginner", "Intermediate", "Advanced"
-             // currentLevelData.subLevelTitle is "ชุดที่ X"
             levelTitleEl.textContent = `Level ${currentLevelData.level}-${currentLevelData.subLevelIndex + 1}: ${currentLevelData.title.trim()}`;
             qCountEl.textContent = `ข้อ: ${currentQuizIndex + 1}/${currentLevelData.questions.length}`; 
             scoreEl.textContent = `คะแนน: ${score}`;
         }
         
-        // --- TIMER LOGIC ---
-        function startTimer(duration) {
-            clearInterval(timerInterval);
-            totalTime = duration;
-            timeRemaining = duration;
+        // --- TIMER LOGIC (Modified to support resume) ---
+        function startTimer(duration, isResuming = false) {
+            if (!isResuming) {
+                clearInterval(timerInterval);
+                totalTime = duration;
+                timeRemaining = duration;
+            }
+            
             isGameActive = true;
+            isPaused = false;
+
+            // UI Change for Active State
+            pauseBtn.style.display = 'block';
+            pausedControlsEl.style.display = 'none';
+            nextQBtn.style.display = 'none';
+
             updateTimerBar();
 
             timerInterval = setInterval(() => {
@@ -433,6 +510,45 @@
         function stopTimer() {
             clearInterval(timerInterval);
             isGameActive = false;
+        }
+        
+        // --- PAUSE/RESUME/BACK TO MAIN LOGIC ---
+
+        function pauseGame() {
+            if (!isGameActive || isAnswered || isPaused) return;
+            
+            stopTimer();
+            isGameActive = false;
+            isPaused = true;
+            window.speechSynthesis.cancel();
+            
+            // UI Change for Pause State
+            pauseBtn.style.display = 'none';
+            pausedControlsEl.style.display = 'flex'; // Show two control buttons
+        }
+
+        function resumeGame() {
+            if (isAnswered) return;
+            
+            startTimer(timeRemaining, true); // Resume from remaining time
+            
+            // UI Change for Active State (Handled in startTimer, but for clarity)
+            pauseBtn.style.display = 'block';
+            pausedControlsEl.style.display = 'none';
+        }
+        
+        function goToLevelSelect() {
+            window.speechSynthesis.cancel();
+            currentLevelData = null; 
+            score = 0;
+            
+            // Reset control visibility
+            pauseBtn.style.display = 'none';
+            pausedControlsEl.style.display = 'none';
+            nextQBtn.style.display = 'none';
+            mainMenuBtn.classList.remove('full-width-next-btn'); // Clean up end game style
+
+            showScreen('level-select-screen');
         }
 
         function updateTimerBar() {
@@ -454,22 +570,18 @@
             englishWordDisplayEl.textContent = "";
             
             // Clear selected status from all tiles
-            gameGridEl.querySelectorAll('.tile.selected').forEach(tile => {
-                tile.classList.remove('selected');
+            gameGridEl.querySelectorAll('.tile.selected, .tile.correct').forEach(tile => {
+                tile.classList.remove('selected', 'correct');
                 tile.style.cursor = 'pointer';
+                tile.style.opacity = '1';
             });
             
-            // Clear message area after a short delay
-            setTimeout(() => {
-                if (!isAnswered) {
-                    messageAreaEl.textContent = `สะกดคำโจทย์ตามลำดับ... (เริ่มที่ ${nextExpectedChar})`;
-                    messageAreaEl.style.color = 'var(--color-text-dark)';
-                }
-            }, 1000);
+            messageAreaEl.textContent = `สะกดคำโจทย์ตามลำดับ... (เริ่มที่ ${nextExpectedChar})`;
+            messageAreaEl.style.color = 'var(--color-text-dark)';
         }
 
         function handleTileClick(event) {
-            if (!isGameActive || isAnswered || event.currentTarget.classList.contains('selected')) return;
+            if (!isGameActive || isAnswered || event.currentTarget.classList.contains('selected') || isPaused) return;
 
             const tileEl = event.currentTarget;
             const clickedChar = tileEl.querySelector('.tile-char-wrapper').textContent;
@@ -562,11 +674,11 @@
             
             const levelData = allQuizData.map(data => ({
                 ...data,
-                // Split 50 questions into 10 sub-levels of 5 questions each
-                subLevels: Array.from({ length: 10 }, (_, i) => ({
+                // Split 50 questions into 5 sub-levels of 10 questions each
+                subLevels: Array.from({ length: 5 }, (_, i) => ({ // length: 5
                     id: `${data.level}-${i + 1}`,
                     title: `ชุดที่ ${i + 1}`,
-                    questions: data.questions.slice(i * 5, (i + 1) * 5),
+                    questions: data.questions.slice(i * 10, (i + 1) * 10), // slice by 10
                     index: i
                 }))
             }));
@@ -576,7 +688,7 @@
                     const btn = document.createElement('button');
                     btn.className = 'level-btn';
                     
-                    // Display fix: Level X-Y
+                    // Display: Level X-Y
                     btn.textContent = `Level ${data.level}-${i + 1}`;
                     
                     btn.setAttribute('data-level-id', subLevel.id);
@@ -607,21 +719,24 @@
             window.speechSynthesis.cancel();
             
             if (currentLevelData === null) {
-                // Safety check: Should not happen if coming from startGame
-                showScreen('level-select-screen');
+                goToLevelSelect();
                 return;
             }
 
             if (currentQuizIndex >= currentLevelData.questions.length) {
+                // If the flow reaches here, it means the last question finished,
+                // but the auto-advance logic didn't trigger endGame(). Call it explicitly.
                 endGame();
                 return;
             }
             
             isAnswered = false;
-            nextBtn.disabled = true;
-            nextBtn.textContent = 'ข้อถัดไป ⏭️/กลับหน้าหลัก'; // Reset button text
-            englishWordDisplayEl.textContent = ''; 
-            messageAreaEl.textContent = ''; // Will be reset in resetGuess
+            isPaused = false;
+            
+            // Reset control visibility for new question
+            pauseBtn.style.display = 'block';
+            pausedControlsEl.style.display = 'none';
+            nextQBtn.style.display = 'none';
 
             updateStatusBar();
             const q = currentLevelData.questions[currentQuizIndex];
@@ -641,46 +756,43 @@
         function endQuestion(isCorrect) {
             stopTimer();
             isAnswered = true;
-            nextBtn.disabled = false;
+            
+            // UI Change for End State: Hide all game controls (waiting for auto-next/endGame)
+            pauseBtn.style.display = 'none';
+            pausedControlsEl.style.display = 'none';
+            nextQBtn.style.display = 'none';
+            
             updateStatusBar();
             
             const q = currentLevelData.questions[currentQuizIndex];
             
             englishWordDisplayEl.textContent = `${q.correctWord} (${q.thaiPrompt})`;
             
+            // Auto-advance is handled inside speakAnswer
             speakAnswer(q.correctWord, q.thaiPrompt);
         }
 
         function endGame() {
-            levelTitleEl.textContent = `จบ Level ${currentLevelData.level}!`;
+            stopTimer(); 
+            
+            levelTitleEl.textContent = `จบ Level ${currentLevelData.level}-${currentLevelData.subLevelIndex + 1}!`;
             qCountEl.textContent = '';
             
             messageAreaEl.textContent = `คุณทำคะแนนได้ ${score}/${currentLevelData.questions.length} คะแนน`;
             messageAreaEl.style.fontSize = '1.8rem';
             messageAreaEl.style.color = score >= 0.8 * currentLevelData.questions.length ? 'var(--color-correct)' : 'var(--color-wrong)';
 
-            nextBtn.textContent = 'กลับหน้าหลัก (Level Selection)';
-            nextBtn.disabled = false;
+            // UI Change for Game Over State: Show only full-width 'Back to Main' button
+            pauseBtn.style.display = 'none';
+            pausedControlsEl.style.display = 'none';
+            nextQBtn.style.display = 'none';
             
-            nextBtn.onclick = () => {
-                window.speechSynthesis.cancel();
-                showScreen('level-select-screen');
-                // Reset to default next button behavior
-                nextBtn.textContent = 'ข้อถัดไป ⏭️/กลับหน้าหลัก';
-                nextBtn.onclick = handleManualNext;
-            };
-        }
-
-        function handleManualNext() {
-             if (nextBtn.textContent.includes('กลับหน้าหลัก')) {
-                 return; // Handled by endGame()
-             }
-
-             if (isAnswered) {
-                 window.speechSynthesis.cancel();
-                 currentQuizIndex++;
-                 nextQuestion();
-             }
+            // Re-purpose mainMenuBtn for the final full-width button
+            mainMenuBtn.textContent = 'กลับหน้าหลัก (Level Selection) 🏠';
+            mainMenuBtn.style.display = 'block'; 
+            mainMenuBtn.classList.add('full-width-next-btn'); 
+            
+            // The click handler is already bound to goToLevelSelect in the initial setup.
         }
 
 
@@ -690,8 +802,16 @@
             createLevelButtons();
             showScreen('level-select-screen');
 
-            // Event listener สำหรับการกดปุ่มข้อถัดไปเอง (Manual Next)
-            nextBtn.addEventListener('click', handleManualNext);
+            // Bind new button actions
+            pauseBtn.addEventListener('click', pauseGame);
+            resumeBtn.addEventListener('click', resumeGame);
+            mainMenuBtn.addEventListener('click', goToLevelSelect); 
+            
+            // Ensure mainMenuBtn doesn't have the full-width style by default
+            mainMenuBtn.style.display = 'none'; 
+            
+            // nextQBtn logic can be implemented here if you need a manual override after TTS, 
+            // but for now, it's hidden as auto-next is primary.
         });
     </script>
 </body>
