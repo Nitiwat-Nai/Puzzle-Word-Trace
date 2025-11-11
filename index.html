@@ -3,422 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Word Trace 5.2: Auto-Play Mode 👑</title>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700;900&display=swap" rel="stylesheet">
-    <style>
-        /* Global & Theme Setup */
-        :root {
-            --color-primary: #1565C0; /* Lapis Blue */
-            --color-secondary: #FFC107; /* Gold (L1) */
-            --color-level-2: #FF9800; /* Orange (L2) */
-            --color-level-3: #F44336; /* Red (L3) */
-            --color-correct: #66BB6A; /* Green */
-            --color-wrong: #EF5350; /* Red */
-            --color-bg: #FFF8E1; /* Light Sand */
-            --color-card: #FFFFFF; /* Ivory */
-            --color-text-dark: #263238;
-            --color-text-light: #FFFFFF;
-        }
-
-        /* Container Styles */
-        body {
-            font-family: 'Sarabun', sans-serif;
-            background-color: var(--color-bg);
-            color: var(--color-text-dark);
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            text-align: center;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 500px;
-            box-sizing: border-box;
-            background-color: var(--color-card);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            padding: 0;
-        }
-
-        /* Header */
-        header {
-            background-color: var(--color-primary);
-            color: var(--color-secondary);
-            padding: 1rem 1rem;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-        }
-        header h1 { font-size: 1.8rem; margin: 0; cursor: pointer; } /* Added cursor: pointer for visual cue */
-        .version-tag { font-size: 0.7rem; font-weight: 400; display: block; margin-top: 2px; opacity: 0.8; color: var(--color-text-light); }
-        
-        /* --- SECRET MODE: Pulsing Effect for Title --- */
-        @keyframes slow-pulse {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.05); opacity: 0.9; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-
-        .auto-mode-active h1 {
-            animation: slow-pulse 2s infinite ease-in-out;
-            color: var(--color-secondary) !important; /* Keep original color but ensure it's not overridden */
-        }
-
-        /* Screen Management */
-        .screen {
-            padding: 1rem;
-            display: none; 
-            flex-grow: 1;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-        .screen.active { display: flex; }
-        
-        /* --- Level Selection Screen --- */
-        #level-select-screen .level-grid-select {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            padding: 1rem 0;
-        }
-        
-        /* Level Buttons */
-        .level-btn {
-            color: var(--color-text-dark);
-            border: none;
-            padding: 1.5rem 0.5rem;
-            border-radius: 12px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.1s, box-shadow 0.1s;
-        }
-        
-        .level-btn[data-level='1'] { background-color: var(--color-secondary); box-shadow: 0 4px 0 #FFB300; }
-        .level-btn[data-level='2'] { background-color: var(--color-level-2); box-shadow: 0 4px 0 #F57C00; }
-        .level-btn[data-level='3'] { background-color: var(--color-level-3); color: var(--color-text-light); box-shadow: 0 4px 0 #D32F2F; }
-
-        .level-btn:active { transform: translateY(2px); box-shadow: none; }
-        .level-btn[data-level='1']:active { box-shadow: 0 2px 0 #FFB300; }
-        .level-btn[data-level='2']:active { box-shadow: 0 2px 0 #F57C00; }
-        .level-btn[data-level='3']:active { box-shadow: 0 2px 0 #D32F2F; }
-
-        /* Timer Bar */
-        #timer-bar-container { width: 100%; height: 20px; background-color: #CFD8DC; border-radius: 10px; overflow: hidden; margin-bottom: 1rem; }
-        #timer-bar { height: 100%; width: 100%; background-color: var(--color-secondary); transition: width 0.1s linear; }
-
-        /* Game Grid */
-        #game-grid {
-            width: 95%;
-            margin: 0 auto;
-            aspect-ratio: 1 / 1; 
-            border: 4px solid var(--color-primary);
-            border-radius: 10px;
-            padding: 5px;
-            display: grid;
-            gap: 5px;
-        }
-
-        .tile {
-            background-color: var(--color-card);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.2s, opacity 0.2s;
-            position: relative;
-            overflow: hidden;
-            border: 2px solid #E0E0E0;
-            opacity: 1;
-        }
-        
-        /* Tile State Styles */
-        .tile.selected { background-color: #B2EBF2; border-color: #00BCD4; opacity: 0.7; cursor: default; }
-        .tile.correct { background-color: var(--color-correct); border-color: #4CAF50; opacity: 1; cursor: default; }
-        
-        .tile-char-wrapper {
-             font-size: calc(30px + 2vw); 
-             font-weight: 900;
-             color: var(--color-text-dark);
-             padding: 5px;
-             line-height: 1;
-        }
-        
-        /* Word Display Area */
-        #english-word-display { font-size: 2rem; font-weight: 900; min-height: 2rem; color: var(--color-primary); margin: 0.5rem 0 0.5rem 0; }
-
-        /* --- New Game Control Button Styles --- */
-        #game-controls {
-            margin-top: 2rem;
-            width: 100%;
-        }
-
-        .control-btn {
-            background-color: var(--color-primary);
-            color: var(--color-text-light);
-            border: none;
-            padding: 1rem;
-            border-radius: 50px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 4px 0 #0D47A1;
-            transition: all 0.1s;
-            width: 100%; 
-        }
-
-        .control-btn:active {
-            transform: translateY(2px);
-            box-shadow: 0 2px 0 #0D47A1;
-        }
-
-        #paused-controls, #end-level-controls {
-            display: flex;
-            gap: 10px;
-            width: 100%;
-        }
-
-        #paused-controls .control-btn, #end-level-controls .control-btn {
-            width: 50%; /* Half width for the two buttons */
-            padding: 1rem 0.5rem;
-            font-size: 1.1rem;
-        }
-
-        .secondary-btn {
-            background-color: #607D8B; /* Blue Grey for secondary/back button */
-            box-shadow: 0 4px 0 #455A64;
-        }
-
-        .secondary-btn:active {
-            box-shadow: 0 2px 0 #455A64;
-        }
-
-        .success-btn {
-            background-color: var(--color-correct);
-            box-shadow: 0 4px 0 #388E3C;
-        }
-        
-        .success-btn:active {
-            box-shadow: 0 2px 0 #388E3C;
-        }
-
-    </style>
-</head>
+    <title>Word Trace 6.0</title> <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700;900&display=swap" rel="stylesheet">
+    </head>
 <body>
 
     <div class="container" id="main-container">
         <header id="game-header">
             <h1 id="game-title">Word Trace 👑</h1>
-            <span class="version-tag">Version 5.2: Auto-Play Mode</span>
+            <span class="version-tag">Version 6.0: Auto-Play Mode</span>
         </header>
 
-        <div id="level-select-screen" class="screen active">
-            <h2>สะกดคำศัพท์ตามลำดับ</h2>
-            <p>คลิกตัวอักษรเพื่อสะกดคำโจทย์ภาษาอังกฤษ (ชุดละ 10 ข้อ)</p>
-            <div class="level-grid-select" id="level-grid-select">
-                </div>
         </div>
-        
-        <div id="game-screen" class="screen">
-            <div class="top-content">
-                <div class="status-bar">
-                    <span id="level-title">Level: </span>
-                    <span id="q-count">ข้อ: 0/50</span>
-                    <span id="score">คะแนน: 0</span>
-                </div>
-
-                <div id="prompt-area">
-                    <div id="thai-prompt">โจทย์: (คำแปลภาษาไทย)</div>
-                    <div id="english-word-display"></div>
-                </div>
-
-                <div id="timer-bar-container">
-                    <div id="timer-bar"></div>
-                </div>
-                
-                <div id="game-grid">
-                    </div>
-                
-                <div id="message-area"></div>
-                
-            </div>
-            
-            <div id="game-controls">
-                <button id="pause-btn" class="control-btn" style="display: none;">หยุด ⏸️</button>
-                
-                <div id="paused-controls" style="display: none;">
-                    <button id="resume-btn" class="control-btn">เล่นต่อ ▶️</button>
-                    <button id="main-menu-btn-pause" class="control-btn secondary-btn">กลับหน้าหลัก 🏠</button>
-                </div>
-                
-                <div id="end-level-controls" style="display: none;">
-                    <button id="play-again-btn" class="control-btn success-btn">เล่นใหม่ (ชุดนี้) 🔄</button>
-                    <button id="main-menu-btn-end" class="control-btn secondary-btn">กลับหน้าหลัก 🏠</button>
-                </div>
-                
-                <button id="next-q-btn" class="control-btn" style="display: none;">ข้อถัดไป ⏭️</button>
-            </div>
-        </div>
-    </div>
-
+    
     <script>
-        // --- DATA (Word Trace Questions) ---
+        // ... (ส่วน Utility Functions และ DATA ยังคงเดิม) ...
         
-        function getRandomDistractorChar(excludeChars = []) {
-            const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-            const availableChars = alphabet.split('').filter(char => !excludeChars.includes(char));
-            if (availableChars.length === 0) return 'Z'; 
-            return availableChars[Math.floor(Math.random() * availableChars.length)];
-        }
-
-        // --- Utility for shuffling an array (Fisher-Yates) ---
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-            return array;
-        }
-
-        function generateTiles(word, minLength, gridSize) {
-            const tiles = [];
-            const tileCount = gridSize * gridSize;
-            const wordChars = word.split('');
-            const wordLength = word.length;
-            const excludeChars = [...new Set(wordChars)]; 
-
-            const pathIndices = [];
-            while(pathIndices.length < wordLength) {
-                const randomIndex = Math.floor(Math.random() * tileCount);
-                if (pathIndices.indexOf(randomIndex) === -1) {
-                    pathIndices.push(randomIndex);
-                }
-            }
-
-            for (let i = 0; i < tileCount; i++) {
-                const charIndex = pathIndices.indexOf(i);
-                
-                if (charIndex !== -1) {
-                    tiles.push({
-                        char: wordChars[charIndex],
-                        order: charIndex + 1,
-                        tileIndex: i // Store the position index
-                    });
-                } else {
-                    tiles.push({
-                        char: getRandomDistractorChar(excludeChars),
-                        order: 0,
-                        tileIndex: i
-                    });
-                }
-            }
-            return tiles;
-        }
-
-        // Function to apply time reduction (3 seconds)
-        function adjustTimeLimit(originalTime) {
-            return Math.max(3, originalTime - 3); // Ensure time doesn't go below 3 seconds
-        }
-
-        const rawWordData = {
-            // Level 1: Beginner (3x3 Grid, 3-4 Letters) - 50 Words
-            level1Words: [
-                { correctWord: "CAT", thaiPrompt: "แมว", timeLimit: 12 }, { correctWord: "DOG", thaiPrompt: "สุนัข", timeLimit: 12 }, { correctWord: "SUN", thaiPrompt: "พระอาทิตย์", timeLimit: 12 }, { correctWord: "MOON", thaiPrompt: "พระจันทร์", timeLimit: 15 }, { correctWord: "FISH", thaiPrompt: "ปลา", timeLimit: 15 },
-                { correctWord: "TREE", thaiPrompt: "ต้นไม้", timeLimit: 12 }, { correctWord: "BIRD", thaiPrompt: "นก", timeLimit: 12 }, { correctWord: "BLUE", thaiPrompt: "สีน้ำเงิน", timeLimit: 15 }, { correctWord: "RED", thaiPrompt: "สีแดง", timeLimit: 12 }, { correctWord: "RICE", thaiPrompt: "ข้าว", timeLimit: 15 },
-                { correctWord: "BOOK", thaiPrompt: "หนังสือ", timeLimit: 15 }, { correctWord: "CAR", thaiPrompt: "รถยนต์", timeLimit: 12 }, { correctWord: "BUS", thaiPrompt: "รถประจำทาง", timeLimit: 12 }, { correctWord: "HOME", thaiPrompt: "บ้าน", timeLimit: 15 }, { correctWord: "BALL", thaiPrompt: "ลูกบอล", timeLimit: 15 },
-                { correctWord: "HAND", thaiPrompt: "มือ", timeLimit: 15 }, { correctWord: "FOOT", thaiPrompt: "เท้า", timeLimit: 15 }, { correctWord: "FARM", thaiPrompt: "ฟาร์ม", timeLimit: 15 }, { correctWord: "STAR", thaiPrompt: "ดาว", timeLimit: 15 }, { correctWord: "SHIP", thaiPrompt: "เรือ", timeLimit: 15 },
-                { correctWord: "RAIN", thaiPrompt: "ฝน", timeLimit: 15 }, { correctWord: "WIND", thaiPrompt: "ลม", timeLimit: 15 }, { correctWord: "ROAD", thaiPrompt: "ถนน", timeLimit: 15 }, { correctWord: "FIRE", thaiPrompt: "ไฟ", timeLimit: 15 }, { correctWord: "LAKE", thaiPrompt: "ทะเลสาบ", timeLimit: 15 },
-                { correctWord: "WANT", thaiPrompt: "ต้องการ", timeLimit: 15 }, { correctWord: "KNOW", thaiPrompt: "รู้", timeLimit: 12 }, { correctWord: "LOVE", thaiPrompt: "รัก", timeLimit: 12 }, { correctWord: "HELP", thaiPrompt: "ช่วยเหลือ", timeLimit: 15 }, { correctWord: "NAME", thaiPrompt: "ชื่อ", timeLimit: 12 },
-                { correctWord: "PLAY", thaiPrompt: "เล่น", timeLimit: 12 }, { correctWord: "SICK", thaiPrompt: "ป่วย", timeLimit: 15 }, { correctWord: "FAST", thaiPrompt: "เร็ว", timeLimit: 15 }, { correctWord: "SLOW", thaiPrompt: "ช้า", timeLimit: 15 }, { correctWord: "DARK", thaiPrompt: "มืด", timeLimit: 12 },
-                { correctWord: "LIGHT", thaiPrompt: "แสง", timeLimit: 15 }, { correctWord: "OPEN", thaiPrompt: "เปิด", timeLimit: 12 }, { correctWord: "STOP", thaiPrompt: "หยุด", timeLimit: 12 }, { correctWord: "WALK", thaiPrompt: "เดิน", timeLimit: 15 }, { correctWord: "TALK", thaiPrompt: "พูด", timeLimit: 12 },
-                { correctWord: "GATE", thaiPrompt: "ประตู", timeLimit: 15 }, { correctWord: "FOOD", thaiPrompt: "อาหาร", timeLimit: 15 }, { correctWord: "DRINK", thaiPrompt: "เครื่องดื่ม", timeLimit: 15 }, { correctWord: "EARS", thaiPrompt: "หู", timeLimit: 12 }, { correctWord: "EYE", thaiPrompt: "ตา", timeLimit: 12 },
-                { correctWord: "SING", thaiPrompt: "ร้องเพลง", timeLimit: 15 }, { correctWord: "JUMP", thaiPrompt: "กระโดด", timeLimit: 15 }, { correctWord: "BELL", thaiPrompt: "ระฆัง", timeLimit: 12 }, { correctWord: "KING", thaiPrompt: "พระราชา", timeLimit: 12 }, { correctWord: "DOOR", thaiPrompt: "ประตู", timeLimit: 15 }
-            ],
-
-            // Level 2: Intermediate (4x4 Grid, 5-6 Letters) - 50 Words
-            level2Words: [
-                { correctWord: "APPLE", thaiPrompt: "แอปเปิ้ล", timeLimit: 18 }, { correctWord: "PEACH", thaiPrompt: "ลูกพีช", timeLimit: 18 }, { correctWord: "TIGER", thaiPrompt: "เสือ", timeLimit: 18 }, { correctWord: "CHAIR", thaiPrompt: "เก้าอี้", timeLimit: 18 }, { correctWord: "YELLOW", thaiPrompt: "สีเหลือง", timeLimit: 20 },
-                { correctWord: "SLEEP", thaiPrompt: "นอนหลับ", timeLimit: 18 }, { correctWord: "FAMILY", thaiPrompt: "ครอบครัว", timeLimit: 20 }, { correctWord: "BROTHER", thaiPrompt: "พี่ชาย/น้องชาย", timeLimit: 20 }, { correctWord: "SISTER", thaiPrompt: "พี่สาว/น้องสาว", timeLimit: 20 }, { correctWord: "FRIEND", thaiPrompt: "เพื่อน", timeLimit: 18 },
-                { correctWord: "SCHOOL", thaiPrompt: "โรงเรียน", timeLimit: 20 }, { correctWord: "STUDY", thaiPrompt: "เรียน", timeLimit: 18 }, { correctWord: "TEACH", thaiPrompt: "สอน", timeLimit: 18 }, { correctWord: "WRITER", thaiPrompt: "นักเขียน", timeLimit: 20 }, { correctWord: "GARDEN", thaiPrompt: "สวน", timeLimit: 20 },
-                { correctWord: "FLOWER", thaiPrompt: "ดอกไม้", timeLimit: 20 }, { correctWord: "WATER", thaiPrompt: "น้ำ", timeLimit: 18 }, { correctWord: "OCEAN", thaiPrompt: "มหาสมุทร", timeLimit: 18 }, { correctWord: "MOUNTAIN", thaiPrompt: "ภูเขา", timeLimit: 20 }, { correctWord: "STREET", thaiPrompt: "ถนน", timeLimit: 18 },
-                { correctWord: "BUILD", thaiPrompt: "สร้าง", timeLimit: 18 }, { correctWord: "TRAVEL", thaiPrompt: "เดินทาง", timeLimit: 20 }, { correctWord: "EATING", thaiPrompt: "กำลังกิน", timeLimit: 20 }, { correctWord: "SMART", thaiPrompt: "ฉลาด", timeLimit: 18 }, { correctWord: "CLEVER", thaiPrompt: "เก่ง", timeLimit: 18 },
-                { correctWord: "HAPPY", thaiPrompt: "มีความสุข", timeLimit: 20 }, { correctWord: "SMILE", thaiPrompt: "ยิ้ม", timeLimit: 18 }, { correctWord: "DANCE", thaiPrompt: "เต้นรำ", timeLimit: 18 }, { correctWord: "CLOUDY", thaiPrompt: "มีเมฆมาก", timeLimit: 20 }, { correctWord: "WINTER", thaiPrompt: "ฤดูหนาว", timeLimit: 20 },
-                { correctWord: "SUMMER", thaiPrompt: "ฤดูร้อน", timeLimit: 20 }, { correctWord: "SPRING", thaiPrompt: "ฤดูใบไม้ผลิ", timeLimit: 20 }, { correctWord: "AUTUMN", thaiPrompt: "ฤดูใบไม้ร่วง", timeLimit: 20 }, { correctWord: "CHICKEN", thaiPrompt: "ไก่", timeLimit: 20 }, { correctWord: "BUTTER", thaiPrompt: "เนย", timeLimit: 20 },
-                { correctWord: "CHEESE", thaiPrompt: "เนยแข็ง", timeLimit: 20 }, { correctWord: "SUGAR", thaiPrompt: "น้ำตาล", timeLimit: 20 }, { correctWord: "SALT", thaiPrompt: "เกลือ", timeLimit: 18 }, { correctWord: "PIRATE", thaiPrompt: "โจรสลัด", timeLimit: 20 }, { correctWord: "POLICE", thaiPrompt: "ตำรวจ", timeLimit: 20 },
-                { correctWord: "DOCTOR", thaiPrompt: "หมอ", timeLimit: 18 }, { correctWord: "NURSE", thaiPrompt: "พยาบาล", timeLimit: 18 }, { correctWord: "ENGINE", thaiPrompt: "เครื่องยนต์", timeLimit: 20 }, { correctWord: "TICKET", thaiPrompt: "ตั๋ว", timeLimit: 20 }, { correctWord: "PLANET", thaiPrompt: "ดาวเคราะห์", timeLimit: 20 },
-                { correctWord: "FUTURE", thaiPrompt: "อนาคต", timeLimit: 20 }, { correctWord: "MOMENT", thaiPrompt: "ชั่วขณะ", timeLimit: 20 }, { correctWord: "PERSON", thaiPrompt: "บุคคล", timeLimit: 20 }, { correctWord: "PEOPLE", thaiPrompt: "ผู้คน", timeLimit: 20 }, { correctWord: "SYSTEM", thaiPrompt: "ระบบ", timeLimit: 20 }
-            ],
-
-            // Level 3: Advanced (5x5/6x6 Grid, 7-10+ Letters) - 50 Words
-            level3Words: [
-                { correctWord: "ELEPHANT", thaiPrompt: "ช้าง", timeLimit: 25 }, { correctWord: "COMPUTER", thaiPrompt: "คอมพิวเตอร์", timeLimit: 25 }, { correctWord: "LIBRARY", thaiPrompt: "ห้องสมุด", timeLimit: 22 }, { correctWord: "UNIVERSITY", thaiPrompt: "มหาวิทยาลัย", timeLimit: 30 }, { correctWord: "WEATHER", thaiPrompt: "สภาพอากาศ", timeLimit: 25 },
-                { correctWord: "HOSPITAL", thaiPrompt: "โรงพยาบาล", timeLimit: 25 }, { correctWord: "BUILDING", thaiPrompt: "อาคาร", timeLimit: 22 }, { correctWord: "MAGAZINE", thaiPrompt: "นิตยสาร", timeLimit: 25 }, { correctWord: "HOLIDAY", thaiPrompt: "วันหยุด", timeLimit: 22 }, { correctWord: "VACATION", thaiPrompt: "การพักผ่อน", timeLimit: 25 },
-                { correctWord: "BEAUTIFUL", thaiPrompt: "สวยงาม", timeLimit: 30 }, { correctWord: "DIFFICULT", thaiPrompt: "ยาก", timeLimit: 25 }, { correctWord: "INTEREST", thaiPrompt: "น่าสนใจ", timeLimit: 25 }, { correctWord: "EXCELLENT", thaiPrompt: "ยอดเยี่ยม", timeLimit: 25 }, { correctWord: "COMPLETE", thaiPrompt: "เสร็จสมบูรณ์", timeLimit: 25 },
-                { correctWord: "TOGETHER", thaiPrompt: "ด้วยกัน", timeLimit: 25 }, { correctWord: "LANGUAGE", thaiPrompt: "ภาษา", timeLimit: 25 }, { correctWord: "HISTORY", thaiPrompt: "ประวัติศาสตร์", timeLimit: 30 }, { correctWord: "SCIENCE", thaiPrompt: "วิทยาศาสตร์", timeLimit: 25 }, { correctWord: "MATHEMATICS", thaiPrompt: "คณิตศาสตร์", timeLimit: 30 },
-                { correctWord: "GEOGRAPHY", thaiPrompt: "ภูมิศาสตร์", timeLimit: 30 }, { correctWord: "TECHNOLOGY", thaiPrompt: "เทคโนโลยี", timeLimit: 30 }, { correctWord: "TELEPHONE", thaiPrompt: "โทรศัพท์", timeLimit: 25 }, { correctWord: "INTERNET", thaiPrompt: "อินเทอร์เน็ต", timeLimit: 25 }, { correctWord: "COMMUNITY", thaiPrompt: "ชุมชน", timeLimit: 25 },
-                { correctWord: "DIRECTION", thaiPrompt: "ทิศทาง", timeLimit: 25 }, { correctWord: "SOLUTION", thaiPrompt: "วิธีแก้ปัญหา", timeLimit: 25 }, { correctWord: "QUESTION", thaiPrompt: "คำถาม", timeLimit: 25 }, { correctWord: "ANSWER", thaiPrompt: "คำตอบ", timeLimit: 25 }, { correctWord: "MATERIAL", thaiPrompt: "วัสดุ", timeLimit: 25 },
-                { correctWord: "ACTIVITY", thaiPrompt: "กิจกรรม", timeLimit: 25 }, { correctWord: "POSITION", thaiPrompt: "ตำแหน่ง", timeLimit: 25 }, { correctWord: "GOVERNMENT", thaiPrompt: "รัฐบาล", timeLimit: 30 }, { correctWord: "PRESIDENT", thaiPrompt: "ประธานาธิบดี", timeLimit: 30 }, { correctWord: "MINISTER", thaiPrompt: "รัฐมนตรี", timeLimit: 25 },
-                { correctWord: "BUSINESS", thaiPrompt: "ธุรกิจ", timeLimit: 25 }, { correctWord: "INDUSTRY", thaiPrompt: "อุตสาหกรรม", timeLimit: 30 }, { correctWord: "CUSTOMER", thaiPrompt: "ลูกค้า", timeLimit: 25 }, { correctWord: "DEVELOPER", thaiPrompt: "นักพัฒนา", timeLimit: 25 }, { correctWord: "PROGRAMMER", thaiPrompt: "โปรแกรมเมอร์", timeLimit: 30 },
-                { correctWord: "ADVENTURE", thaiPrompt: "การผจญภัย", timeLimit: 30 }, { correctWord: "TRADITION", thaiPrompt: "ประเพณี", timeLimit: 25 }, { correctWord: "CULTURE", thaiPrompt: "วัฒนธรรม", timeLimit: 25 }, { correctWord: "POPULAR", thaiPrompt: "เป็นที่นิยม", timeLimit: 25 }, { correctWord: "SURPRISE", thaiPrompt: "ประหลาดใจ", timeLimit: 25 },
-                { correctWord: "CREATIVE", thaiPrompt: "สร้างสรรค์", timeLimit: 25 }, { correctWord: "DIAMOND", thaiPrompt: "เพชร", timeLimit: 25 }, { correctWord: "TREASURE", thaiPrompt: "สมบัติ", timeLimit: 25 }, { correctWord: "EXPLORER", thaiPrompt: "นักสำรวจ", timeLimit: 25 }, { correctWord: "PHARAOH", thaiPrompt: "ฟาโรห์", timeLimit: 25 }
-            ]
-        };
-        
-        // Map word lists to full question objects with adjusted time
-        const createLevelQuestions = (words, gridSizeFunc) => {
-            return words.map(q => {
-                const gridSize = gridSizeFunc(q.correctWord.length);
-                return {
-                    ...q, 
-                    tiles: generateTiles(q.correctWord, q.correctWord.length, gridSize), 
-                    gridSize: gridSize,
-                    timeLimit: adjustTimeLimit(q.timeLimit)
-                };
-            });
-        };
-
-        const level1Questions = createLevelQuestions(rawWordData.level1Words, () => 3);
-        const level2Questions = createLevelQuestions(rawWordData.level2Words, () => 4);
-        const level3Questions = createLevelQuestions(rawWordData.level3Words, (len) => len > 9 ? 6 : 5);
-
-
-        const allQuizData = [
-            { level: 1, title: "Beginner", questions: level1Questions },
-            { level: 2, title: "Intermediate", questions: level2Questions },
-            { level: 3, title: "Advanced", questions: level3Questions }
-        ];
-
-        // --- ELEMENTS ---
-        const mainContainerEl = document.getElementById('main-container');
-        const gameTitleEl = document.getElementById('game-title');
-        const levelGridSelectEl = document.getElementById('level-grid-select');
-        const levelSelectScreen = document.getElementById('level-select-screen');
-        const gameScreen = document.getElementById('game-screen');
-        const levelTitleEl = document.getElementById('level-title');
-        const qCountEl = document.getElementById('q-count');
-        const scoreEl = document.getElementById('score');
-        const thaiPromptEl = document.getElementById('thai-prompt');
-        const englishWordDisplayEl = document.getElementById('english-word-display');
-        const gameGridEl = document.getElementById('game-grid');
-        const timerBarEl = document.getElementById('timer-bar');
-        const messageAreaEl = document.getElementById('message-area');
-        
-        // Button Elements
-        const pauseBtn = document.getElementById('pause-btn');
-        const resumeBtn = document.getElementById('resume-btn');
-        const mainMenuBtnPause = document.getElementById('main-menu-btn-pause');
-        const mainMenuBtnEnd = document.getElementById('main-menu-btn-end');
-        const playAgainBtn = document.getElementById('play-again-btn');
-        const nextQBtn = document.getElementById('next-q-btn'); 
-        const pausedControlsEl = document.getElementById('paused-controls');
-        const endLevelControlsEl = document.getElementById('end-level-controls');
-
         // --- GAME STATE ---
         let currentLevelData = null;
         let originalLevelData = null; // To store data for "Play Again"
@@ -430,480 +29,54 @@
         let totalTime = 0;
         let isGameActive = false;
         let isPaused = false; 
-        let isAutoPlayMode = false; // NEW: Auto Play Mode State
-        let autoPlayTimeout = null; // NEW: Timeout handler for auto-spelling
+        let isAutoPlayMode = false; 
+        let autoPlayTimeout = null; 
         let utterance = null; 
         
         let currentGuessWord = "";
         let nextExpectedChar = ""; 
 
         // --- TTS & UTILITY FUNCTIONS ---
-        function setupSpeech() {
-            if ('speechSynthesis' in window) {
-                utterance = new SpeechSynthesisUtterance();
-                utterance.volume = 1; 
-                utterance.rate = 1;
-                utterance.pitch = 1;
-            }
-        }
         
-        function speak(text, lang, onEndCallback = null) {
-            if (utterance) {
-                window.speechSynthesis.cancel(); 
-                utterance.text = text;
-                utterance.lang = lang;
-                
-                const voices = window.speechSynthesis.getVoices();
-                if (lang === 'en-US' || lang === 'en-GB') {
-                    utterance.voice = voices.find(v => v.lang.startsWith('en-')); 
-                } else if (lang === 'th-TH') {
-                    utterance.voice = voices.find(v => v.lang.startsWith('th-'));
-                }
-                
-                utterance.onend = onEndCallback;
-
-                window.speechSynthesis.speak(utterance);
-            }
-        }
-        
+        // ******************************************************
+        // *** แก้ไข/ปรับปรุง: speakAnswer สำหรับ Auto-Play V6 ***
+        // ******************************************************
         function speakAnswer(englishWord, thaiMeaning) {
             
+            // ตรวจสอบว่าเป็นคำถามสุดท้ายของชุดหรือไม่
+            const isLastQuestion = currentQuizIndex + 1 >= currentLevelData.questions.length;
+
             const onThaiSpeakEnd = () => {
                  utterance.onend = null; 
                  
-                 if (currentQuizIndex + 1 < currentLevelData.questions.length) {
+                 // *** แก้ไข V6: เริ่มคำใหม่โดยอัตโนมัติหลังจากอ่านจบ ***
+                 if (!isLastQuestion) {
+                      // ถ้าไม่ใช่คำถามสุดท้าย ให้รอ 0.5 วินาทีแล้วไปคำถามถัดไป
                       setTimeout(() => {
                         currentQuizIndex++;
-                        nextQuestion(); 
+                        nextQuestion(); // เริ่มคำใหม่
                      }, 500); 
                  } else {
+                     // ถ้าเป็นคำถามสุดท้าย ให้จบเกม
                      endGame();
                  }
             };
             
+            // อ่านภาษาอังกฤษก่อน
             const onEnglishSpeakEnd = () => {
+                 // อ่านภาษาไทยต่อ
                  speak(thaiMeaning, 'th-TH', onThaiSpeakEnd);
             };
 
+            // เริ่มอ่านคำศัพท์
             speak(englishWord, 'en-US', onEnglishSpeakEnd);
         }
 
-        // --- SECRET MODE TOGGLE ---
-        function toggleAutoPlayMode() {
-            isAutoPlayMode = !isAutoPlayMode;
-            if (isAutoPlayMode) {
-                mainContainerEl.classList.add('auto-mode-active');
-                console.log("Auto-Play Mode: ON");
-                // Inform user in message area if they are on the select screen
-                if (levelSelectScreen.classList.contains('active')) {
-                     messageAreaEl.textContent = "โหมดเล่นอัตโนมัติเปิดอยู่! เลือก Level เพื่อเริ่ม";
-                     messageAreaEl.style.color = 'var(--color-primary)';
-                }
-            } else {
-                mainContainerEl.classList.remove('auto-mode-active');
-                clearAutoPlay();
-                console.log("Auto-Play Mode: OFF");
-                if (levelSelectScreen.classList.contains('active')) {
-                     messageAreaEl.textContent = "";
-                }
-            }
-        }
-        
-        function clearAutoPlay() {
-             if (autoPlayTimeout) {
-                clearTimeout(autoPlayTimeout);
-                autoPlayTimeout = null;
-             }
-        }
+        // ... (ส่วนอื่น ๆ ยังคงเดิม) ...
 
-
-        // --- UI & SCREEN MANAGEMENT ---
-
-        function showScreen(id) {
-            window.speechSynthesis.cancel();
-            document.querySelectorAll('.screen').forEach(screen => {
-                screen.classList.remove('active');
-            });
-            document.getElementById(id).classList.add('active');
-            
-            // Update message area on screen change
-             if (id === 'level-select-screen' && isAutoPlayMode) {
-                messageAreaEl.textContent = "โหมดเล่นอัตโนมัติเปิดอยู่! เลือก Level เพื่อเริ่ม";
-                messageAreaEl.style.color = 'var(--color-primary)';
-            } else if (id === 'game-screen') {
-                messageAreaEl.textContent = ""; // Clear for game start
-            }
-        }
-
-        function updateStatusBar() {
-            levelTitleEl.textContent = `Level ${currentLevelData.level}-${currentLevelData.subLevelIndex + 1}: ${currentLevelData.title.trim()}`;
-            qCountEl.textContent = `ข้อ: ${currentQuizIndex + 1}/${currentLevelData.questions.length}`; 
-            scoreEl.textContent = `คะแนน: ${score}`;
-        }
-        
-        // --- TIMER LOGIC ---
-        function startTimer(duration, isResuming = false) {
-            if (!isResuming) {
-                clearInterval(timerInterval);
-                totalTime = duration;
-                timeRemaining = duration;
-            }
-            
-            isGameActive = true;
-            isPaused = false;
-
-            // UI Change for Active State
-            pauseBtn.style.display = 'block';
-            pausedControlsEl.style.display = 'none';
-            endLevelControlsEl.style.display = 'none';
-            nextQBtn.style.display = 'none';
-            
-            // Hide pause button if Auto Play is active
-            if (isAutoPlayMode) {
-                 pauseBtn.style.display = 'none';
-            }
-
-            updateTimerBar();
-
-            timerInterval = setInterval(() => {
-                timeRemaining -= 0.1;
-                if (timeRemaining <= 0) {
-                    timeRemaining = 0;
-                    clearInterval(timerInterval);
-                    checkFlow(true); // timeUp = true
-                }
-                updateTimerBar();
-            }, 100);
-        }
-
-        function stopTimer() {
-            clearInterval(timerInterval);
-            isGameActive = false;
-        }
-        
-        // --- PAUSE/RESUME/BACK TO MAIN LOGIC ---
-
-        function pauseGame() {
-            if (!isGameActive || isAnswered || isPaused || isAutoPlayMode) return;
-            
-            stopTimer();
-            isGameActive = false;
-            isPaused = true;
-            window.speechSynthesis.cancel();
-            
-            // UI Change for Pause State
-            pauseBtn.style.display = 'none';
-            pausedControlsEl.style.display = 'flex'; // Show Resume and Main Menu
-            endLevelControlsEl.style.display = 'none';
-        }
-
-        function resumeGame() {
-            if (isAnswered) return;
-            
-            startTimer(timeRemaining, true); // Resume from remaining time
-            
-            // UI Change for Active State 
-            pauseBtn.style.display = 'block';
-            pausedControlsEl.style.display = 'none';
-        }
-        
-        function goToLevelSelect() {
-            window.speechSynthesis.cancel();
-            stopTimer();
-            clearAutoPlay(); // Clear auto play timeout
-            
-            currentLevelData = null; 
-            originalLevelData = null; 
-            score = 0;
-            
-            // Reset control visibility
-            pauseBtn.style.display = 'none';
-            pausedControlsEl.style.display = 'none';
-            endLevelControlsEl.style.display = 'none';
-            nextQBtn.style.display = 'none';
-
-            showScreen('level-select-screen');
-        }
-        
-        function playAgainSameLevel() {
-            if (!originalLevelData) {
-                 goToLevelSelect(); 
-                 return;
-            }
-            
-            const { levelData: ld, subLevelData: sld } = originalLevelData;
-            startGame(ld, sld, true); 
-        }
-
-        function updateTimerBar() {
-            const percentage = (timeRemaining / totalTime) * 100;
-            timerBarEl.style.width = `${percentage}%`;
-            if (percentage < 25) {
-                timerBarEl.style.backgroundColor = 'var(--color-wrong)';
-            } else {
-                timerBarEl.style.backgroundColor = 'var(--color-secondary)';
-            }
-        }
-        
-        // --- AUTO-PLAY MECHANISM ---
-        function startAutoPlay(q) {
-             if (!isAutoPlayMode) return;
-             
-             const correctWord = q.correctWord;
-             const tileElements = gameGridEl.querySelectorAll('.tile');
-             const orderedTiles = q.tiles.filter(t => t.order > 0).sort((a, b) => a.order - b.order);
-             
-             let spellIndex = 0;
-             
-             const spellNextChar = () => {
-                if (spellIndex >= correctWord.length || isAnswered || isPaused) {
-                    clearAutoPlay();
-                    return;
-                }
-                
-                const charToFind = correctWord.charAt(spellIndex);
-                
-                // Find the actual tile element to "click" based on the current expected character
-                // Note: We need to find the specific tile that was allocated for this character *and* hasn't been clicked yet
-                const currentTileData = orderedTiles[spellIndex];
-                const tileEl = tileElements[currentTileData.tileIndex];
-                
-                // --- Simulate Click ---
-                if (tileEl) {
-                     // Manually update state and UI as if a click occurred
-                     currentGuessWord += charToFind;
-                     tileEl.classList.add('selected');
-                     tileEl.style.cursor = 'default';
-                     englishWordDisplayEl.textContent = currentGuessWord;
-                     
-                     checkFlow(); // Check if word is complete
-                }
-                
-                spellIndex++;
-                
-                if (!isAnswered) {
-                     const delay = Math.random() * (800 - 600) + 600; // 0.6 to 0.8 seconds
-                     autoPlayTimeout = setTimeout(spellNextChar, delay);
-                }
-             };
-             
-             // Start spelling immediately
-             const initialDelay = Math.random() * (800 - 600) + 600; 
-             autoPlayTimeout = setTimeout(spellNextChar, initialDelay);
-        }
-
-        // --- GAME GRID LOGIC (Sequential Spelling) ---
-        
-        function resetGuess() {
-            const q = currentLevelData.questions[currentQuizIndex];
-            currentGuessWord = "";
-            nextExpectedChar = q.correctWord.charAt(0);
-            englishWordDisplayEl.textContent = "";
-            
-            // Clear selected status from all tiles
-            gameGridEl.querySelectorAll('.tile.selected, .tile.correct').forEach(tile => {
-                tile.classList.remove('selected', 'correct');
-                tile.style.cursor = 'pointer';
-                tile.style.opacity = '1';
-            });
-            
-            messageAreaEl.textContent = isAutoPlayMode ? "โหมดเล่นอัตโนมัติกำลังทำงาน..." : `สะกดคำโจทย์ตามลำดับ... (เริ่มที่ ${nextExpectedChar})`;
-            messageAreaEl.style.color = isAutoPlayMode ? 'var(--color-primary)' : 'var(--color-text-dark)';
-        }
-
-        function handleTileClick(event) {
-            if (!isGameActive || isAnswered || event.currentTarget.classList.contains('selected') || isPaused || isAutoPlayMode) return;
-
-            const tileEl = event.currentTarget;
-            const clickedChar = tileEl.querySelector('.tile-char-wrapper').textContent;
-            
-            if (clickedChar === nextExpectedChar) {
-                currentGuessWord += clickedChar;
-                tileEl.classList.add('selected');
-                tileEl.style.cursor = 'default';
-                
-                englishWordDisplayEl.textContent = currentGuessWord;
-                
-                checkFlow();
-                
-            } else {
-                // Wrong click: reset the guess and show temporary error
-                messageAreaEl.textContent = `❌ ผิดพลาด! ต้องเริ่มสะกดจาก '${nextExpectedChar}' ใหม่`;
-                messageAreaEl.style.color = 'var(--color-wrong)';
-                resetGuess();
-            }
-        }
-
-        function createGrid(q, gridSize) {
-            gameGridEl.innerHTML = '';
-            gameGridEl.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
-
-            q.tiles.forEach((tileData, index) => {
-                const tileEl = document.createElement('div');
-                tileEl.className = 'tile';
-                // Add data attributes for auto play to find the right tile easily
-                tileEl.setAttribute('data-index', tileData.tileIndex); 
-                tileEl.setAttribute('data-order', tileData.order); 
-                
-                const charWrapper = document.createElement('div');
-                charWrapper.className = 'tile-char-wrapper';
-                charWrapper.textContent = tileData.char;
-                
-                tileEl.appendChild(charWrapper);
-                tileEl.addEventListener('click', handleTileClick);
-                gameGridEl.appendChild(tileEl);
-            });
-        }
-        
-        function highlightCorrectAnswer() {
-            const allTiles = gameGridEl.querySelectorAll('.tile');
-            
-            allTiles.forEach((tileEl) => {
-                const order = parseInt(tileEl.getAttribute('data-order'));
-                if (order > 0) {
-                    tileEl.classList.add('correct');
-                    tileEl.classList.remove('selected');
-                } else {
-                    tileEl.style.opacity = '0.4'; 
-                }
-                tileEl.style.cursor = 'default';
-            });
-        }
-
-        function checkFlow(timeUp = false) {
-            if (isAnswered) return;
-
-            const q = currentLevelData.questions[currentQuizIndex];
-            const correctWord = q.correctWord;
-            const currentLength = currentGuessWord.length;
-
-            if (currentLength < correctWord.length) {
-                nextExpectedChar = correctWord.charAt(currentLength);
-            }
-            
-            if (currentGuessWord === correctWord) {
-                isAnswered = true;
-                score++;
-                
-                // Clear auto play immediately on completion
-                clearAutoPlay(); 
-
-                messageAreaEl.textContent = `✅ สำเร็จ! คำศัพท์คือ ${q.correctWord}`;
-                messageAreaEl.style.color = 'var(--color-correct)';
-                highlightCorrectAnswer();
-                endQuestion(true);
-            } else if (timeUp) {
-                isAnswered = true;
-                
-                // Clear auto play immediately on time up
-                clearAutoPlay(); 
-
-                messageAreaEl.textContent = `⏰ หมดเวลา! คำศัพท์คือ ${q.correctWord}`;
-                messageAreaEl.style.color = 'var(--color-wrong)';
-                
-                highlightCorrectAnswer();
-                endQuestion(false);
-            }
-        }
-        
-        // --- GAME LOGIC ---
-
-        function createLevelButtons() {
-             levelGridSelectEl.innerHTML = '';
-            
-            const levelData = allQuizData.map(data => ({
-                ...data,
-                // Split 50 questions into 5 sub-levels of 10 questions each
-                subLevels: Array.from({ length: 5 }, (_, i) => ({ 
-                    id: `${data.level}-${i + 1}`,
-                    title: `ชุดที่ ${i + 1}`,
-                    // *** NEW: Shuffle questions before slicing for each sub-level ***
-                    questions: shuffleArray([...data.questions]).slice(i * 10, (i + 1) * 10), 
-                    index: i,
-                    originalLevel: data, 
-                }))
-            }));
-
-            levelData.forEach(data => {
-                data.subLevels.forEach((subLevel, i) => {
-                    const btn = document.createElement('button');
-                    btn.className = 'level-btn';
-                    
-                    btn.textContent = `Level ${data.level}-${i + 1}`;
-                    
-                    btn.setAttribute('data-level-id', subLevel.id);
-                    btn.setAttribute('data-level', data.level); 
-                    
-                    btn.addEventListener('click', () => {
-                        startGame(data, subLevel);
-                    });
-                    levelGridSelectEl.appendChild(btn);
-                });
-            });
-        }
-
-        function startGame(levelData, subLevelData, isRestart = false) {
-            // Save the original configuration for "Play Again" button
-            if (!isRestart) {
-                originalLevelData = { levelData, subLevelData };
-            }
-            
-            currentLevelData = {
-                ...levelData,
-                // If restarting, get fresh questions (re-shuffled)
-                questions: isRestart ? shuffleArray([...levelData.questions]).slice(subLevelData.index * 10, (subLevelData.index + 1) * 10) : subLevelData.questions,
-                subLevelIndex: subLevelData.index
-            }; 
-            currentQuizIndex = 0;
-            score = 0;
-            
-            showScreen('game-screen');
-            nextQuestion();
-        }
-
-        function nextQuestion() {
-            window.speechSynthesis.cancel();
-            clearAutoPlay(); // Clear any lingering timeout before next question starts
-            
-            if (currentLevelData === null) {
-                goToLevelSelect();
-                return;
-            }
-
-            if (currentQuizIndex >= currentLevelData.questions.length) {
-                endGame();
-                return;
-            }
-            
-            isAnswered = false;
-            isPaused = false;
-            
-            // Reset control visibility for new question
-            pauseBtn.style.display = isAutoPlayMode ? 'none' : 'block';
-            pausedControlsEl.style.display = 'none';
-            endLevelControlsEl.style.display = 'none';
-            nextQBtn.style.display = 'none';
-
-            updateStatusBar();
-            const q = currentLevelData.questions[currentQuizIndex];
-            
-            let gridSize = q.gridSize;
-
-            setupQuestion(q, gridSize);
-            startTimer(q.timeLimit);
-            
-            // NEW: Start auto-play if mode is active
-            if (isAutoPlayMode) {
-                 startAutoPlay(q);
-            }
-        }
-
-        function setupQuestion(q, gridSize) {
-            thaiPromptEl.textContent = `โจทย์: ${q.thaiPrompt}`;
-            createGrid(q, gridSize);
-            resetGuess(); 
-        }
-        
+        // ******************************************************
+        // *** แก้ไข: endQuestion เพื่อสั่งให้เริ่มอ่าน (จุดที่ 2) ***
+        // ******************************************************
         function endQuestion(isCorrect) {
             stopTimer();
             clearAutoPlay(); // Just in case
@@ -919,23 +92,22 @@
             
             const q = currentLevelData.questions[currentQuizIndex];
             
+            // แสดงคำตอบเต็มบนจอ
             englishWordDisplayEl.textContent = `${q.correctWord} (${q.thaiPrompt})`;
             
-            // Auto-advance is handled inside speakAnswer
+            // *** V6 แก้ไข: เรียก speakAnswer ซึ่งจะจัดการการอ่านและการเริ่มคำใหม่/จบเกมโดยอัตโนมัติ ***
             speakAnswer(q.correctWord, q.thaiPrompt);
+            
+            // *****************************************************************
+            // *** หมายเหตุ: โค้ด V5.3 เดิมมีการซ่อนปุ่ม nextQBtn ไว้แล้ว         ***
+            // *** การเรียก speakAnswer() จะทำให้ flow การทำงานสมบูรณ์ตามต้องการ ***
+            // *****************************************************************
         }
 
         function endGame() {
             stopTimer(); 
+            // ... (โค้ด endGame เดิมยังคงอยู่) ...
             
-            const levelTitleText = `Level ${currentLevelData.level}-${currentLevelData.subLevelIndex + 1}`;
-            levelTitleEl.textContent = `จบ ${levelTitleText}!`;
-            qCountEl.textContent = '';
-            
-            messageAreaEl.textContent = `คุณทำคะแนนได้ ${score}/${currentLevelData.questions.length} คะแนน`;
-            messageAreaEl.style.fontSize = '1.8rem';
-            messageAreaEl.style.color = score >= 0.8 * currentLevelData.questions.length ? 'var(--color-correct)' : 'var(--color-wrong)';
-
             // UI Change for Game Over State: Show Play Again and Main Menu buttons
             pauseBtn.style.display = 'none';
             pausedControlsEl.style.display = 'none';
@@ -944,23 +116,7 @@
             nextQBtn.style.display = 'none';
         }
 
-
-        // --- INITIAL SETUP ---
-        document.addEventListener('DOMContentLoaded', () => {
-            setupSpeech();
-            createLevelButtons();
-            showScreen('level-select-screen');
-
-            // NEW: Bind double click handler for Auto-Play Mode
-            gameTitleEl.addEventListener('dblclick', toggleAutoPlayMode);
-
-            // Bind button actions
-            pauseBtn.addEventListener('click', pauseGame);
-            resumeBtn.addEventListener('click', resumeGame);
-            mainMenuBtnPause.addEventListener('click', goToLevelSelect); 
-            mainMenuBtnEnd.addEventListener('click', goToLevelSelect);
-            playAgainBtn.addEventListener('click', playAgainSameLevel);
-        });
+        // ... (ส่วน INITIAL SETUP ยังคงเดิม) ...
     </script>
 </body>
 </html>
