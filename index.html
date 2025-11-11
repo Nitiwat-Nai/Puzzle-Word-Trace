@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Word Trace 6.1</title> 
+    <title>Word Trace 6.2</title> 
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         /* Global & Theme Setup */
@@ -54,8 +54,8 @@
             padding: 1rem 1rem;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
         }
-        header h1 { font-size: 1.8rem; margin: 0; cursor: pointer; } /* Added cursor: pointer for visual cue */
-        /* แก้ไข: อัปเดตเลขเวอร์ชันบนหน้าจอ */
+        header h1 { font-size: 1.8rem; margin: 0; cursor: pointer; } 
+        /* V6.2: อัปเดตเวอร์ชัน */
         .version-tag { font-size: 0.7rem; font-weight: 400; display: block; margin-top: 2px; opacity: 0.8; color: var(--color-text-light); }
         
         /* --- SECRET MODE: Pulsing Effect for Title --- */
@@ -67,7 +67,7 @@
 
         .auto-mode-active h1 {
             animation: slow-pulse 2s infinite ease-in-out;
-            color: var(--color-secondary) !important; /* Keep original color but ensure it's not overridden */
+            color: var(--color-secondary) !important; 
         }
 
         /* Screen Management */
@@ -186,13 +186,13 @@
         }
 
         #paused-controls .control-btn, #end-level-controls .control-btn {
-            width: 50%; /* Half width for the two buttons */
+            width: 50%; 
             padding: 1rem 0.5rem;
             font-size: 1.1rem;
         }
 
         .secondary-btn {
-            background-color: #607D8B; /* Blue Grey for secondary/back button */
+            background-color: #607D8B; 
             box-shadow: 0 4px 0 #455A64;
         }
 
@@ -216,7 +216,7 @@
     <div class="container" id="main-container">
         <header id="game-header">
             <h1 id="game-title">Word Trace 👑</h1>
-            <span class="version-tag">Version 6.1: Auto-Play Mode</span>
+            <span class="version-tag">Version 6.2: Auto-Play Mode</span>
         </header>
 
         <div id="level-select-screen" class="screen active">
@@ -309,7 +309,7 @@
                     tiles.push({
                         char: wordChars[charIndex],
                         order: charIndex + 1,
-                        tileIndex: i // Store the position index
+                        tileIndex: i 
                     });
                 } else {
                     tiles.push({
@@ -324,7 +324,7 @@
 
         // Function to apply time reduction (3 seconds)
         function adjustTimeLimit(originalTime) {
-            return Math.max(3, originalTime - 3); // Ensure time doesn't go below 3 seconds
+            return Math.max(3, originalTime - 3); 
         }
 
         const rawWordData = {
@@ -422,7 +422,7 @@
 
         // --- GAME STATE ---
         let currentLevelData = null;
-        let originalLevelData = null; // To store data for "Play Again"
+        let originalLevelData = null; 
         let currentQuizIndex = 0;
         let score = 0;
         let isAnswered = false;
@@ -431,16 +431,16 @@
         let totalTime = 0;
         let isGameActive = false;
         let isPaused = false; 
-        let isAutoPlayMode = false; // NEW: Auto Play Mode State
-        let autoPlayTimeout = null; // NEW: Timeout handler for auto-spelling
+        let isAutoPlayMode = false; 
+        let autoPlayTimeout = null; 
         let utterance = null; 
         
         let currentGuessWord = "";
         let nextExpectedChar = ""; 
         
-        // *** V6.1 FIX: Global Auto-Next Question Delay ***
-        const autoNextQDelay = 5500; // 5.5 วินาที: เวลาที่คาดว่าจะใช้ในการอ่านคำศัพท์และคำแปล
-        let autoNextQTransitionTimeout = null; // Timeout handler for guaranteed flow
+        // V6.1 FIX: Global Auto-Next Question Delay (คงเดิม)
+        const autoNextQDelay = 5500; 
+        let autoNextQTransitionTimeout = null; 
 
         // --- TTS & UTILITY FUNCTIONS ---
         function setupSpeech() {
@@ -460,37 +460,33 @@
                 
                 const voices = window.speechSynthesis.getVoices();
                 if (lang === 'en-US' || lang === 'en-GB') {
-                    utterance.voice = voices.find(v => v.lang.startsWith('en-')); 
+                    // Try to find a US or GB voice
+                    utterance.voice = voices.find(v => v.lang.startsWith('en-US') || v.lang.startsWith('en-GB') || v.lang.startsWith('en-')); 
                 } else if (lang === 'th-TH') {
+                    // Try to find a Thai voice
                     utterance.voice = voices.find(v => v.lang.startsWith('th-'));
                 }
                 
                 utterance.onend = onEndCallback;
                 
-                // V6.1 FIX: Use try-catch to attempt speaking, especially important on mobile
                 try {
-                    window.speechSynthesis.speak(utterance);
+                    // *** TTS Block Check ***
+                    window.speechSynthesis.speak(utterance); 
                 } catch(e) {
-                    console.error("Speech synthesis failed to start:", e);
-                    // In auto-play mode, the flow relies on the guaranteed timeout, so no fatal error here
+                    console.error("Speech synthesis failed to start (likely blocked by mobile browser):", e);
                 }
             }
         }
         
-        // ***************************************************************
-        // *** V6.1 FIX: แก้ไข speakAnswer ให้ใช้ Fixed Delay แทน onend ***
-        // ***************************************************************
+        // V6.1: แก้ไข speakAnswer ให้ใช้ Fixed Delay แทน onend
         function speakAnswer(englishWord, thaiMeaning) {
             
             const isLastQuestion = currentQuizIndex + 1 >= currentLevelData.questions.length;
 
-            // 1. Cleanup Function: Only for ending the speech engine (not for flow control)
             const onSpeakEndCleanup = () => {
                  if(utterance) utterance.onend = null;
-                 // เราจะไม่ใช้โค้ดเรียก nextQuestion/endGame ที่นี่อีกแล้ว
             };
 
-            // 2. Start the speech sequence (English -> Thai)
             const onEnglishSpeakEnd = () => {
                  // ถ้าการอ่านอังกฤษสำเร็จ ให้อ่านไทยต่อ
                  speak(thaiMeaning, 'th-TH', onSpeakEndCleanup);
@@ -499,12 +495,13 @@
             // อ่านคำศัพท์ภาษาอังกฤษก่อน
             speak(englishWord, 'en-US', onEnglishSpeakEnd);
             
-            // 3. V6.1 FIX: Guaranteed flow transition using setTimeout
+            // Guaranteed flow transition using setTimeout
             if (isAutoPlayMode) {
                  clearTimeout(autoNextQTransitionTimeout);
-                 // กำหนดเวลาให้เพียงพอต่อการอ่าน (5.5 วินาที) แล้วไปข้อถัดไป
+                 
+                 // ตั้งเวลาหน่วง 5.5 วินาที เพื่อให้มีเวลาอ่านพอสมควร แล้วไปข้อถัดไป
                  autoNextQTransitionTimeout = setTimeout(() => {
-                      if (isAnswered) { // ตรวจสอบสถานะอีกครั้งก่อนไปต่อ
+                      if (isAnswered) { 
                           if (!isLastQuestion) {
                               currentQuizIndex++;
                               nextQuestion(); 
@@ -514,7 +511,7 @@
                       }
                  }, autoNextQDelay); 
             } else {
-                 // โหมด Manual: แสดงปุ่ม "ข้อถัดไป" (เมื่อ TTS เริ่มแล้ว)
+                 // โหมด Manual: แสดงปุ่ม "ข้อถัดไป" 
                  nextQBtn.style.display = 'block';
             }
         }
@@ -532,8 +529,7 @@
             } else {
                 mainContainerEl.classList.remove('auto-mode-active');
                 clearAutoPlay();
-                // เคลียร์ timeout สำหรับ flow ด้วย
-                clearTimeout(autoNextQTransitionTimeout);
+                clearTimeout(autoNextQTransitionTimeout); 
                 console.log("Auto-Play Mode: OFF");
                 if (levelSelectScreen.classList.contains('active')) {
                      messageAreaEl.textContent = "";
@@ -563,7 +559,7 @@
                 messageAreaEl.textContent = "โหมดเล่นอัตโนมัติเปิดอยู่! เลือก Level เพื่อเริ่ม";
                 messageAreaEl.style.color = 'var(--color-primary)';
             } else if (id === 'game-screen') {
-                messageAreaEl.textContent = ""; // Clear for game start
+                messageAreaEl.textContent = ""; 
             }
         }
 
@@ -602,7 +598,7 @@
                 if (timeRemaining <= 0) {
                     timeRemaining = 0;
                     clearInterval(timerInterval);
-                    checkFlow(true); // timeUp = true
+                    checkFlow(true); 
                 }
                 updateTimerBar();
             }, 100);
@@ -625,14 +621,14 @@
             
             // UI Change for Pause State
             pauseBtn.style.display = 'none';
-            pausedControlsEl.style.display = 'flex'; // Show Resume and Main Menu
+            pausedControlsEl.style.display = 'flex'; 
             endLevelControlsEl.style.display = 'none';
         }
 
         function resumeGame() {
             if (isAnswered) return;
             
-            startTimer(timeRemaining, true); // Resume from remaining time
+            startTimer(timeRemaining, true); 
             
             // UI Change for Active State 
             pauseBtn.style.display = 'block';
@@ -642,8 +638,8 @@
         function goToLevelSelect() {
             window.speechSynthesis.cancel();
             stopTimer();
-            clearAutoPlay(); // Clear auto play timeout
-            clearTimeout(autoNextQTransitionTimeout); // เคลียร์ flow timeout
+            clearAutoPlay(); 
+            clearTimeout(autoNextQTransitionTimeout); 
             
             currentLevelData = null; 
             originalLevelData = null; 
@@ -696,32 +692,32 @@
                 
                 const charToFind = correctWord.charAt(spellIndex);
                 
-                // Find the actual tile element to "click" based on the current expected character
                 const currentTileData = orderedTiles[spellIndex];
                 const tileEl = tileElements[currentTileData.tileIndex];
                 
                 // --- Simulate Click ---
                 if (tileEl) {
-                     // Manually update state and UI as if a click occurred
                      currentGuessWord += charToFind;
                      tileEl.classList.add('selected');
                      tileEl.style.cursor = 'default';
                      englishWordDisplayEl.textContent = currentGuessWord;
                      
-                     checkFlow(); // Check if word is complete
+                     checkFlow(); 
                 }
                 
                 spellIndex++;
                 
                 if (!isAnswered) {
-                     // หน่วงเวลาการสะกดอัตโนมัติ (0.6 ถึง 0.8 วินาที)
-                     const delay = Math.random() * (800 - 600) + 600; 
+                     // V6.2 FIX: หน่วงเวลาการสะกดอัตโนมัติ (0.8 ถึง 1.0 วินาที)
+                     const minDelay = 800; 
+                     const maxDelay = 1000;
+                     const delay = Math.random() * (maxDelay - minDelay) + minDelay; 
                      autoPlayTimeout = setTimeout(spellNextChar, delay);
                 }
              };
              
              // เริ่มสะกดคำ
-             const initialDelay = Math.random() * (800 - 600) + 600; 
+             const initialDelay = Math.random() * (1000 - 800) + 800; 
              autoPlayTimeout = setTimeout(spellNextChar, initialDelay);
         }
 
@@ -774,7 +770,6 @@
             q.tiles.forEach((tileData, index) => {
                 const tileEl = document.createElement('div');
                 tileEl.className = 'tile';
-                // Add data attributes for auto play to find the right tile easily
                 tileEl.setAttribute('data-index', tileData.tileIndex); 
                 tileEl.setAttribute('data-order', tileData.order); 
                 
@@ -818,7 +813,6 @@
                 isAnswered = true;
                 score++;
                 
-                // Clear auto play immediately on completion
                 clearAutoPlay(); 
 
                 messageAreaEl.textContent = `✅ สำเร็จ! คำศัพท์คือ ${q.correctWord}`;
@@ -828,7 +822,6 @@
             } else if (timeUp) {
                 isAnswered = true;
                 
-                // Clear auto play immediately on time up
                 clearAutoPlay(); 
 
                 messageAreaEl.textContent = `⏰ หมดเวลา! คำศัพท์คือ ${q.correctWord}`;
@@ -850,7 +843,7 @@
                 subLevels: Array.from({ length: 5 }, (_, i) => ({ 
                     id: `${data.level}-${i + 1}`,
                     title: `ชุดที่ ${i + 1}`,
-                    // *** NEW: Shuffle questions before slicing for each sub-level ***
+                    // Shuffle questions before slicing for each sub-level
                     questions: shuffleArray([...data.questions]).slice(i * 10, (i + 1) * 10), 
                     index: i,
                     originalLevel: data, 
@@ -883,7 +876,6 @@
             
             currentLevelData = {
                 ...levelData,
-                // If restarting, get fresh questions (re-shuffled)
                 questions: isRestart ? shuffleArray([...levelData.questions]).slice(subLevelData.index * 10, (subLevelData.index + 1) * 10) : subLevelData.questions,
                 subLevelIndex: subLevelData.index
             }; 
@@ -896,8 +888,8 @@
 
         function nextQuestion() {
             window.speechSynthesis.cancel();
-            clearAutoPlay(); // Clear any lingering auto-spelling timeout
-            clearTimeout(autoNextQTransitionTimeout); // เคลียร์ flow timeout
+            clearAutoPlay(); 
+            clearTimeout(autoNextQTransitionTimeout); 
             
             if (currentLevelData === null) {
                 goToLevelSelect();
@@ -926,7 +918,7 @@
             setupQuestion(q, gridSize);
             startTimer(q.timeLimit);
             
-            // NEW: Start auto-play if mode is active
+            // Start auto-play if mode is active
             if (isAutoPlayMode) {
                  startAutoPlay(q);
             }
@@ -940,10 +932,10 @@
         
         function endQuestion(isCorrect) {
             stopTimer();
-            clearAutoPlay(); // Just in case
+            clearAutoPlay(); 
             isAnswered = true;
             
-            // UI Change for End State: Hide all game controls (waiting for auto-next/endGame)
+            // UI Change for End State: Hide all game controls 
             pauseBtn.style.display = 'none';
             pausedControlsEl.style.display = 'none';
             endLevelControlsEl.style.display = 'none';
@@ -955,7 +947,7 @@
             
             englishWordDisplayEl.textContent = `${q.correctWord} (${q.thaiPrompt})`;
             
-            // Auto-advance is handled inside speakAnswer (now using guaranteed delay)
+            // Auto-advance is handled inside speakAnswer (using guaranteed delay)
             speakAnswer(q.correctWord, q.thaiPrompt);
         }
 
@@ -974,7 +966,7 @@
             pauseBtn.style.display = 'none';
             pausedControlsEl.style.display = 'none';
             
-            endLevelControlsEl.style.display = 'flex'; // Show new end controls
+            endLevelControlsEl.style.display = 'flex'; 
             nextQBtn.style.display = 'none';
         }
 
