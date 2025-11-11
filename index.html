@@ -55,7 +55,6 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
         }
         header h1 { font-size: 1.8rem; margin: 0; cursor: pointer; } 
-        /* V6.3 FIX: ลบ .version-tag ออกจาก HTML แต่คง CSS เผื่อมีการนำกลับมาใช้ */
         .version-tag { display: none; } 
         
         /* --- SECRET MODE: Pulsing Effect for Title --- */
@@ -206,7 +205,7 @@
         }
         
         .success-btn:active {
-            box_shadow: 0 2px 0 #388E3C;
+            box-shadow: 0 2px 0 #388E3C;
         }
 
     </style>
@@ -216,7 +215,7 @@
     <div class="container" id="main-container">
         <header id="game-header">
             <h1 id="game-title">Word Trace 👑</h1>
-            </header>
+        </header>
 
         <div id="level-select-screen" class="screen active">
             <h2>สะกดคำศัพท์ตามลำดับ</h2>
@@ -495,11 +494,9 @@
                  autoNextQTransitionTimeout = setTimeout(() => {
                       if (isAnswered) { 
                           if (!isLastQuestion) {
-                              // V6.3 FIX: ตรวจสอบอีกครั้งว่าไม่ได้ถูกข้าม/หยุดไปก่อนหน้านี้
-                              if (pauseBtn.style.display !== 'none' && pausedControlsEl.style.display === 'none') {
-                                  currentQuizIndex++;
-                                  nextQuestion(); 
-                              }
+                               // V6.4 FIX: ลบการตรวจสอบ UI ออก ให้ไปต่ออัตโนมัติ 
+                              currentQuizIndex++;
+                              nextQuestion(); 
                           } else {
                               endGame();
                           }
@@ -517,10 +514,9 @@
             if (isAutoPlayMode) {
                 mainContainerEl.classList.add('auto-mode-active');
                 console.log("Auto-Play Mode: ON");
-                // V6.3 FIX: ไม่แสดงข้อความแจ้งโหมดลับบนหน้าหลัก
                 if (levelSelectScreen.classList.contains('active')) {
                      messageAreaEl.textContent = "";
-                     messageAreaEl.style.color = 'var(--color-text-dark)'; // Reset color
+                     messageAreaEl.style.color = 'var(--color-text-dark)'; 
                 }
             } else {
                 mainContainerEl.classList.remove('auto-mode-active');
@@ -550,7 +546,6 @@
             });
             document.getElementById(id).classList.add('active');
             
-            // V6.3 FIX: เคลียร์ข้อความเมื่อเปลี่ยนหน้าจอ
              if (id === 'level-select-screen') {
                 messageAreaEl.textContent = "";
             } else if (id === 'game-screen') {
@@ -575,7 +570,7 @@
             isGameActive = true;
             isPaused = false;
 
-            // UI Change for Active State (V6.3 FIX: Pause button always visible if not answered/paused)
+            // UI Change for Active State 
             pauseBtn.style.display = 'block';
             pausedControlsEl.style.display = 'none';
             endLevelControlsEl.style.display = 'none';
@@ -602,15 +597,16 @@
         // --- PAUSE/RESUME/BACK TO MAIN LOGIC ---
 
         function pauseGame() {
-            if (!isGameActive || isAnswered || isPaused) return; // V6.3: Allow pause in Auto-Play
+            if (!isGameActive || isAnswered || isPaused) return; 
 
             stopTimer();
-            clearAutoPlay(); // V6.3: Stop auto spelling when paused
+            clearAutoPlay(); 
             
             isGameActive = false;
             isPaused = true;
             window.speechSynthesis.cancel();
-            clearTimeout(autoNextQTransitionTimeout); // หยุด flow ไปข้อถัดไป
+             // V6.4 FIX: ยกเลิกการเปลี่ยนข้ออัตโนมัติเมื่อหยุด
+            clearTimeout(autoNextQTransitionTimeout); 
             
             // UI Change for Pause State
             pauseBtn.style.display = 'none';
@@ -627,10 +623,10 @@
             pauseBtn.style.display = 'block';
             pausedControlsEl.style.display = 'none';
 
-            // V6.3: Resume auto spelling if in Auto-Play mode
+            // Resume auto spelling if in Auto-Play mode
             if (isAutoPlayMode) {
                  const q = currentLevelData.questions[currentQuizIndex];
-                 startAutoPlay(q, true); // Pass true to indicate resuming auto-play
+                 startAutoPlay(q, true); 
             }
         }
         
@@ -674,7 +670,6 @@
         }
         
         // --- AUTO-PLAY MECHANISM ---
-        // V6.3 FIX: Added isResuming parameter to handle continued spelling
         function startAutoPlay(q, isResuming = false) {
              if (!isAutoPlayMode) return;
              
@@ -682,7 +677,7 @@
              const tileElements = gameGridEl.querySelectorAll('.tile');
              const orderedTiles = q.tiles.filter(t => t.order > 0).sort((a, b) => a.order - b.order);
              
-             let spellIndex = currentGuessWord.length; // Start from where the current guess stopped
+             let spellIndex = currentGuessWord.length; 
              
              const spellNextChar = () => {
                 if (spellIndex >= correctWord.length || isAnswered || isPaused) {
@@ -716,12 +711,10 @@
                 }
              };
              
-             // ถ้าไม่ได้ resume ให้เริ่มด้วย Initial Delay, ถ้า resume ให้เริ่มทันที
              if (!isResuming) {
                  const initialDelay = Math.random() * (1000 - 800) + 800; 
                  autoPlayTimeout = setTimeout(spellNextChar, initialDelay);
              } else {
-                 // Resume: run immediately to spell the next char
                  autoPlayTimeout = setTimeout(spellNextChar, 100); 
              }
         }
@@ -741,13 +734,13 @@
                 tile.style.opacity = '1';
             });
             
-            // V6.3 FIX: แสดงข้อความสะกดโจทย์ตามลำดับเสมอ
+            // แสดงข้อความสะกดโจทย์ตามลำดับเสมอ
             messageAreaEl.textContent = `สะกดคำโจทย์ตามลำดับ... (เริ่มที่ ${nextExpectedChar})`;
             messageAreaEl.style.color = 'var(--color-text-dark)';
         }
 
         function handleTileClick(event) {
-            // V6.3: ถ้าอยู่ในโหมด Auto-Play ให้ผู้ใช้คลิกไม่ได้
+            // ถ้าอยู่ในโหมด Auto-Play ให้ผู้ใช้คลิกไม่ได้
             if (isAutoPlayMode) return; 
             
             if (!isGameActive || isAnswered || event.currentTarget.classList.contains('selected') || isPaused) return;
@@ -912,7 +905,6 @@
             isPaused = false;
             
             // Reset control visibility for new question
-            // V6.3 FIX: Pause button always displayed
             pauseBtn.style.display = 'block'; 
             pausedControlsEl.style.display = 'none';
             endLevelControlsEl.style.display = 'none';
@@ -943,10 +935,13 @@
             clearAutoPlay(); 
             isAnswered = true;
             
-            // UI Change for End State: Hide pause/resume controls
+            // UI Change for End State: Hide pause/resume controls, show Next Q button
             pauseBtn.style.display = 'none'; 
             pausedControlsEl.style.display = 'none';
             endLevelControlsEl.style.display = 'none';
+            
+            // V6.4: แสดงปุ่ม Next Q เพื่อให้ผู้ใช้ข้ามได้
+            nextQBtn.style.display = 'block'; 
             
             updateStatusBar();
             
@@ -998,7 +993,7 @@
             nextQBtn.addEventListener('click', () => {
                 if (!isAnswered) return;
                 
-                // V6.3 FIX: Clear the auto-play timer before advancing
+                // Clear the auto-play timer before advancing
                 clearTimeout(autoNextQTransitionTimeout);
                 
                 currentQuizIndex++;
