@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Word Trace 5.1: Button Fixes 👑</title>
+    <title>Word Trace 5.2: Auto-Play Mode 👑</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         /* Global & Theme Setup */
@@ -54,8 +54,20 @@
             padding: 1rem 1rem;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
         }
-        header h1 { font-size: 1.8rem; margin: 0; }
+        header h1 { font-size: 1.8rem; margin: 0; cursor: pointer; } /* Added cursor: pointer for visual cue */
         .version-tag { font-size: 0.7rem; font-weight: 400; display: block; margin-top: 2px; opacity: 0.8; color: var(--color-text-light); }
+        
+        /* --- SECRET MODE: Pulsing Effect for Title --- */
+        @keyframes slow-pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.9; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .auto-mode-active h1 {
+            animation: slow-pulse 2s infinite ease-in-out;
+            color: var(--color-secondary) !important; /* Keep original color but ensure it's not overridden */
+        }
 
         /* Screen Management */
         .screen {
@@ -75,7 +87,7 @@
             padding: 1rem 0;
         }
         
-        /* Level Buttons and New Color Scheme (L1 Yellow, L2 Orange, L3 Red) */
+        /* Level Buttons */
         .level-btn {
             color: var(--color-text-dark);
             border: none;
@@ -201,9 +213,9 @@
 <body>
 
     <div class="container" id="main-container">
-        <header>
-            <h1>Word Trace 👑</h1>
-            <span class="version-tag">Version 5.1: Button Fixes</span>
+        <header id="game-header">
+            <h1 id="game-title">Word Trace 👑</h1>
+            <span class="version-tag">Version 5.2: Auto-Play Mode</span>
         </header>
 
         <div id="level-select-screen" class="screen active">
@@ -265,6 +277,15 @@
             return availableChars[Math.floor(Math.random() * availableChars.length)];
         }
 
+        // --- Utility for shuffling an array (Fisher-Yates) ---
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
         function generateTiles(word, minLength, gridSize) {
             const tiles = [];
             const tileCount = gridSize * gridSize;
@@ -287,19 +308,19 @@
                     tiles.push({
                         char: wordChars[charIndex],
                         order: charIndex + 1,
+                        tileIndex: i // Store the position index
                     });
                 } else {
                     tiles.push({
                         char: getRandomDistractorChar(excludeChars),
                         order: 0,
+                        tileIndex: i
                     });
                 }
             }
             return tiles;
         }
 
-        // --- COMPLETE 150 WORDS LIST (Time Limits are 3s shorter here) ---
-        
         // Function to apply time reduction (3 seconds)
         function adjustTimeLimit(originalTime) {
             return Math.max(3, originalTime - 3); // Ensure time doesn't go below 3 seconds
@@ -350,27 +371,21 @@
         };
         
         // Map word lists to full question objects with adjusted time
-        const level1Questions = rawWordData.level1Words.map(q => ({
-            ...q, 
-            tiles: generateTiles(q.correctWord, q.correctWord.length, 3), 
-            gridSize: 3,
-            timeLimit: adjustTimeLimit(q.timeLimit) // Apply reduction
-        }));
-        const level2Questions = rawWordData.level2Words.map(q => ({
-            ...q, 
-            tiles: generateTiles(q.correctWord, q.correctWord.length, 4), 
-            gridSize: 4,
-            timeLimit: adjustTimeLimit(q.timeLimit) // Apply reduction
-        }));
-        const level3Questions = rawWordData.level3Words.map(q => {
-            const gridSize = q.correctWord.length > 9 ? 6 : 5;
-            return {
-                ...q, 
-                tiles: generateTiles(q.correctWord, q.correctWord.length, gridSize), 
-                gridSize: gridSize,
-                timeLimit: adjustTimeLimit(q.timeLimit) // Apply reduction
-            };
-        });
+        const createLevelQuestions = (words, gridSizeFunc) => {
+            return words.map(q => {
+                const gridSize = gridSizeFunc(q.correctWord.length);
+                return {
+                    ...q, 
+                    tiles: generateTiles(q.correctWord, q.correctWord.length, gridSize), 
+                    gridSize: gridSize,
+                    timeLimit: adjustTimeLimit(q.timeLimit)
+                };
+            });
+        };
+
+        const level1Questions = createLevelQuestions(rawWordData.level1Words, () => 3);
+        const level2Questions = createLevelQuestions(rawWordData.level2Words, () => 4);
+        const level3Questions = createLevelQuestions(rawWordData.level3Words, (len) => len > 9 ? 6 : 5);
 
 
         const allQuizData = [
@@ -380,6 +395,8 @@
         ];
 
         // --- ELEMENTS ---
+        const mainContainerEl = document.getElementById('main-container');
+        const gameTitleEl = document.getElementById('game-title');
         const levelGridSelectEl = document.getElementById('level-grid-select');
         const levelSelectScreen = document.getElementById('level-select-screen');
         const gameScreen = document.getElementById('game-screen');
@@ -392,16 +409,15 @@
         const timerBarEl = document.getElementById('timer-bar');
         const messageAreaEl = document.getElementById('message-area');
         
-        // New Button Elements
-        const gameControlsEl = document.getElementById('game-controls');
+        // Button Elements
         const pauseBtn = document.getElementById('pause-btn');
         const resumeBtn = document.getElementById('resume-btn');
-        const mainMenuBtnPause = document.getElementById('main-menu-btn-pause'); // New button for pause screen
-        const mainMenuBtnEnd = document.getElementById('main-menu-btn-end'); // New button for end screen
-        const playAgainBtn = document.getElementById('play-again-btn'); // New button for end screen
+        const mainMenuBtnPause = document.getElementById('main-menu-btn-pause');
+        const mainMenuBtnEnd = document.getElementById('main-menu-btn-end');
+        const playAgainBtn = document.getElementById('play-again-btn');
         const nextQBtn = document.getElementById('next-q-btn'); 
         const pausedControlsEl = document.getElementById('paused-controls');
-        const endLevelControlsEl = document.getElementById('end-level-controls'); // New control block
+        const endLevelControlsEl = document.getElementById('end-level-controls');
 
         // --- GAME STATE ---
         let currentLevelData = null;
@@ -414,6 +430,8 @@
         let totalTime = 0;
         let isGameActive = false;
         let isPaused = false; 
+        let isAutoPlayMode = false; // NEW: Auto Play Mode State
+        let autoPlayTimeout = null; // NEW: Timeout handler for auto-spelling
         let utterance = null; 
         
         let currentGuessWord = "";
@@ -448,7 +466,6 @@
             }
         }
         
-        // Auto-next logic
         function speakAnswer(englishWord, thaiMeaning) {
             
             const onThaiSpeakEnd = () => {
@@ -460,7 +477,6 @@
                         nextQuestion(); 
                      }, 500); 
                  } else {
-                     // Last question answered, trigger end game flow
                      endGame();
                  }
             };
@@ -472,6 +488,35 @@
             speak(englishWord, 'en-US', onEnglishSpeakEnd);
         }
 
+        // --- SECRET MODE TOGGLE ---
+        function toggleAutoPlayMode() {
+            isAutoPlayMode = !isAutoPlayMode;
+            if (isAutoPlayMode) {
+                mainContainerEl.classList.add('auto-mode-active');
+                console.log("Auto-Play Mode: ON");
+                // Inform user in message area if they are on the select screen
+                if (levelSelectScreen.classList.contains('active')) {
+                     messageAreaEl.textContent = "โหมดเล่นอัตโนมัติเปิดอยู่! เลือก Level เพื่อเริ่ม";
+                     messageAreaEl.style.color = 'var(--color-primary)';
+                }
+            } else {
+                mainContainerEl.classList.remove('auto-mode-active');
+                clearAutoPlay();
+                console.log("Auto-Play Mode: OFF");
+                if (levelSelectScreen.classList.contains('active')) {
+                     messageAreaEl.textContent = "";
+                }
+            }
+        }
+        
+        function clearAutoPlay() {
+             if (autoPlayTimeout) {
+                clearTimeout(autoPlayTimeout);
+                autoPlayTimeout = null;
+             }
+        }
+
+
         // --- UI & SCREEN MANAGEMENT ---
 
         function showScreen(id) {
@@ -480,6 +525,14 @@
                 screen.classList.remove('active');
             });
             document.getElementById(id).classList.add('active');
+            
+            // Update message area on screen change
+             if (id === 'level-select-screen' && isAutoPlayMode) {
+                messageAreaEl.textContent = "โหมดเล่นอัตโนมัติเปิดอยู่! เลือก Level เพื่อเริ่ม";
+                messageAreaEl.style.color = 'var(--color-primary)';
+            } else if (id === 'game-screen') {
+                messageAreaEl.textContent = ""; // Clear for game start
+            }
         }
 
         function updateStatusBar() {
@@ -504,6 +557,11 @@
             pausedControlsEl.style.display = 'none';
             endLevelControlsEl.style.display = 'none';
             nextQBtn.style.display = 'none';
+            
+            // Hide pause button if Auto Play is active
+            if (isAutoPlayMode) {
+                 pauseBtn.style.display = 'none';
+            }
 
             updateTimerBar();
 
@@ -526,7 +584,7 @@
         // --- PAUSE/RESUME/BACK TO MAIN LOGIC ---
 
         function pauseGame() {
-            if (!isGameActive || isAnswered || isPaused) return;
+            if (!isGameActive || isAnswered || isPaused || isAutoPlayMode) return;
             
             stopTimer();
             isGameActive = false;
@@ -551,8 +609,11 @@
         
         function goToLevelSelect() {
             window.speechSynthesis.cancel();
+            stopTimer();
+            clearAutoPlay(); // Clear auto play timeout
+            
             currentLevelData = null; 
-            originalLevelData = null; // Clear original data as well
+            originalLevelData = null; 
             score = 0;
             
             // Reset control visibility
@@ -566,13 +627,12 @@
         
         function playAgainSameLevel() {
             if (!originalLevelData) {
-                 goToLevelSelect(); // Safety check
+                 goToLevelSelect(); 
                  return;
             }
             
-            // Re-use original LevelData and restart
             const { levelData: ld, subLevelData: sld } = originalLevelData;
-            startGame(ld, sld, true); // Pass true to indicate restart
+            startGame(ld, sld, true); 
         }
 
         function updateTimerBar() {
@@ -585,6 +645,53 @@
             }
         }
         
+        // --- AUTO-PLAY MECHANISM ---
+        function startAutoPlay(q) {
+             if (!isAutoPlayMode) return;
+             
+             const correctWord = q.correctWord;
+             const tileElements = gameGridEl.querySelectorAll('.tile');
+             const orderedTiles = q.tiles.filter(t => t.order > 0).sort((a, b) => a.order - b.order);
+             
+             let spellIndex = 0;
+             
+             const spellNextChar = () => {
+                if (spellIndex >= correctWord.length || isAnswered || isPaused) {
+                    clearAutoPlay();
+                    return;
+                }
+                
+                const charToFind = correctWord.charAt(spellIndex);
+                
+                // Find the actual tile element to "click" based on the current expected character
+                // Note: We need to find the specific tile that was allocated for this character *and* hasn't been clicked yet
+                const currentTileData = orderedTiles[spellIndex];
+                const tileEl = tileElements[currentTileData.tileIndex];
+                
+                // --- Simulate Click ---
+                if (tileEl) {
+                     // Manually update state and UI as if a click occurred
+                     currentGuessWord += charToFind;
+                     tileEl.classList.add('selected');
+                     tileEl.style.cursor = 'default';
+                     englishWordDisplayEl.textContent = currentGuessWord;
+                     
+                     checkFlow(); // Check if word is complete
+                }
+                
+                spellIndex++;
+                
+                if (!isAnswered) {
+                     const delay = Math.random() * (800 - 600) + 600; // 0.6 to 0.8 seconds
+                     autoPlayTimeout = setTimeout(spellNextChar, delay);
+                }
+             };
+             
+             // Start spelling immediately
+             const initialDelay = Math.random() * (800 - 600) + 600; 
+             autoPlayTimeout = setTimeout(spellNextChar, initialDelay);
+        }
+
         // --- GAME GRID LOGIC (Sequential Spelling) ---
         
         function resetGuess() {
@@ -600,12 +707,12 @@
                 tile.style.opacity = '1';
             });
             
-            messageAreaEl.textContent = `สะกดคำโจทย์ตามลำดับ... (เริ่มที่ ${nextExpectedChar})`;
-            messageAreaEl.style.color = 'var(--color-text-dark)';
+            messageAreaEl.textContent = isAutoPlayMode ? "โหมดเล่นอัตโนมัติกำลังทำงาน..." : `สะกดคำโจทย์ตามลำดับ... (เริ่มที่ ${nextExpectedChar})`;
+            messageAreaEl.style.color = isAutoPlayMode ? 'var(--color-primary)' : 'var(--color-text-dark)';
         }
 
         function handleTileClick(event) {
-            if (!isGameActive || isAnswered || event.currentTarget.classList.contains('selected') || isPaused) return;
+            if (!isGameActive || isAnswered || event.currentTarget.classList.contains('selected') || isPaused || isAutoPlayMode) return;
 
             const tileEl = event.currentTarget;
             const clickedChar = tileEl.querySelector('.tile-char-wrapper').textContent;
@@ -634,7 +741,8 @@
             q.tiles.forEach((tileData, index) => {
                 const tileEl = document.createElement('div');
                 tileEl.className = 'tile';
-                tileEl.setAttribute('data-index', index);
+                // Add data attributes for auto play to find the right tile easily
+                tileEl.setAttribute('data-index', tileData.tileIndex); 
                 tileEl.setAttribute('data-order', tileData.order); 
                 
                 const charWrapper = document.createElement('div');
@@ -676,12 +784,20 @@
             if (currentGuessWord === correctWord) {
                 isAnswered = true;
                 score++;
+                
+                // Clear auto play immediately on completion
+                clearAutoPlay(); 
+
                 messageAreaEl.textContent = `✅ สำเร็จ! คำศัพท์คือ ${q.correctWord}`;
                 messageAreaEl.style.color = 'var(--color-correct)';
                 highlightCorrectAnswer();
                 endQuestion(true);
             } else if (timeUp) {
                 isAnswered = true;
+                
+                // Clear auto play immediately on time up
+                clearAutoPlay(); 
+
                 messageAreaEl.textContent = `⏰ หมดเวลา! คำศัพท์คือ ${q.correctWord}`;
                 messageAreaEl.style.color = 'var(--color-wrong)';
                 
@@ -701,9 +817,10 @@
                 subLevels: Array.from({ length: 5 }, (_, i) => ({ 
                     id: `${data.level}-${i + 1}`,
                     title: `ชุดที่ ${i + 1}`,
-                    questions: data.questions.slice(i * 10, (i + 1) * 10), 
+                    // *** NEW: Shuffle questions before slicing for each sub-level ***
+                    questions: shuffleArray([...data.questions]).slice(i * 10, (i + 1) * 10), 
                     index: i,
-                    originalLevel: data, // Keep reference to parent
+                    originalLevel: data, 
                 }))
             }));
 
@@ -733,7 +850,8 @@
             
             currentLevelData = {
                 ...levelData,
-                questions: subLevelData.questions,
+                // If restarting, get fresh questions (re-shuffled)
+                questions: isRestart ? shuffleArray([...levelData.questions]).slice(subLevelData.index * 10, (subLevelData.index + 1) * 10) : subLevelData.questions,
                 subLevelIndex: subLevelData.index
             }; 
             currentQuizIndex = 0;
@@ -745,6 +863,7 @@
 
         function nextQuestion() {
             window.speechSynthesis.cancel();
+            clearAutoPlay(); // Clear any lingering timeout before next question starts
             
             if (currentLevelData === null) {
                 goToLevelSelect();
@@ -760,7 +879,7 @@
             isPaused = false;
             
             // Reset control visibility for new question
-            pauseBtn.style.display = 'block';
+            pauseBtn.style.display = isAutoPlayMode ? 'none' : 'block';
             pausedControlsEl.style.display = 'none';
             endLevelControlsEl.style.display = 'none';
             nextQBtn.style.display = 'none';
@@ -772,6 +891,11 @@
 
             setupQuestion(q, gridSize);
             startTimer(q.timeLimit);
+            
+            // NEW: Start auto-play if mode is active
+            if (isAutoPlayMode) {
+                 startAutoPlay(q);
+            }
         }
 
         function setupQuestion(q, gridSize) {
@@ -782,6 +906,7 @@
         
         function endQuestion(isCorrect) {
             stopTimer();
+            clearAutoPlay(); // Just in case
             isAnswered = true;
             
             // UI Change for End State: Hide all game controls (waiting for auto-next/endGame)
@@ -826,14 +951,13 @@
             createLevelButtons();
             showScreen('level-select-screen');
 
-            // Bind new button actions
+            // NEW: Bind double click handler for Auto-Play Mode
+            gameTitleEl.addEventListener('dblclick', toggleAutoPlayMode);
+
+            // Bind button actions
             pauseBtn.addEventListener('click', pauseGame);
             resumeBtn.addEventListener('click', resumeGame);
-            
-            // New binding for the main menu button inside the pause screen
             mainMenuBtnPause.addEventListener('click', goToLevelSelect); 
-            
-            // New bindings for the end level screen
             mainMenuBtnEnd.addEventListener('click', goToLevelSelect);
             playAgainBtn.addEventListener('click', playAgainSameLevel);
         });
