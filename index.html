@@ -19,6 +19,10 @@
             --error: #FF5C5C;         /* Soft Red */
             --gold: #FFB74D;          /* Warm Yellow */
             
+            --level1-bg: #FFF8E5;     /* Lighter background for L1 buttons */
+            --level2-bg: #FFE9EC;     /* Lighter background for L2 buttons */
+            --level3-bg: #E7E6FF;     /* Lighter background for L3 buttons */
+            
             --shadow: 0 10px 25px rgba(108, 99, 255, 0.15);
             --shadow-sm: 0 4px 10px rgba(0,0,0,0.05);
             --radius: 20px;
@@ -91,6 +95,8 @@
             padding: 1.5rem;
             overflow-y: auto;
             align-items: center;
+            /* V7.1 FIX: พื้นหลังสีอ่อน */
+            background-color: #FFF8F8;
         }
         .screen.active { display: flex; }
 
@@ -104,24 +110,23 @@
         }
 
         .level-btn {
-            background: var(--card-bg);
             border: none;
             padding: 1.5rem 0.5rem;
             border-radius: var(--radius-sm);
             font-size: 1.1rem;
             font-weight: 800;
             color: var(--text-main);
-            box-shadow: 0 4px 0 #E2E8F0; /* Soft 3D effect */
+            box-shadow: 0 4px 0 #CBD5E0; /* Soft 3D effect */
             cursor: pointer;
             transition: transform 0.1s, box-shadow 0.1s, background 0.2s;
             position: relative;
             overflow: hidden;
         }
 
-        /* Level Colors */
-        .level-btn[data-level='1'] { border-bottom: 4px solid var(--gold); }
-        .level-btn[data-level='2'] { border-bottom: 4px solid var(--accent); }
-        .level-btn[data-level='3'] { border-bottom: 4px solid var(--primary); }
+        /* V7.1 FIX: สีปุ่ม Level */
+        .level-btn[data-level='1'] { background-color: var(--level1-bg); border-bottom: 4px solid var(--gold); }
+        .level-btn[data-level='2'] { background-color: var(--level2-bg); border-bottom: 4px solid var(--accent); }
+        .level-btn[data-level='3'] { background-color: var(--level3-bg); border-bottom: 4px solid var(--primary); }
 
         .level-btn:active {
             transform: translateY(2px);
@@ -148,7 +153,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-bottom: auto; /* Push controls down */
+            margin-bottom: auto; 
         }
 
         #prompt-area {
@@ -305,6 +310,7 @@
         <div id="game-screen" class="screen">
             <div class="status-bar">
                 <span id="level-title">Level 1-1</span>
+                <span id="q-count">ข้อ: 1/10</span>
                 <span id="score">⭐ 0</span>
             </div>
 
@@ -381,8 +387,12 @@
             }
             return tiles;
         }
+        
+        // Function to apply time reduction (3 seconds)
+        function adjustTimeLimit(originalTime) {
+            return Math.max(3, originalTime - 3); 
+        }
 
-        // --- WORD DATA ---
         const rawWordData = {
             level1Words: [
                 { correctWord: "CAT", thaiPrompt: "แมว", timeLimit: 12 }, { correctWord: "DOG", thaiPrompt: "สุนัข", timeLimit: 12 }, { correctWord: "SUN", thaiPrompt: "พระอาทิตย์", timeLimit: 12 }, { correctWord: "MOON", thaiPrompt: "พระจันทร์", timeLimit: 15 }, { correctWord: "FISH", thaiPrompt: "ปลา", timeLimit: 15 },
@@ -474,6 +484,8 @@
         
         let currentGuessWord = "";
         let nextExpectedChar = ""; 
+        
+        const autoNextQDelay = 5500; 
         let autoNextQTransitionTimeout = null; 
 
         // --- TTS SYSTEM ---
@@ -499,7 +511,6 @@
                 utterance.lang = lang;
                 
                 const voices = window.speechSynthesis.getVoices();
-                // Find best voice match
                 if (lang.startsWith('en')) {
                     utterance.voice = voices.find(v => v.lang === 'en-US') || voices.find(v => v.lang.startsWith('en'));
                 } else if (lang.startsWith('th')) {
@@ -511,50 +522,40 @@
                 try { window.speechSynthesis.speak(utterance); } 
                 catch(e) { console.error("TTS Error:", e); }
             } else if (onEndCallback) {
-                // Fallback if no TTS -> proceed anyway
                 onEndCallback(); 
             }
         }
         
+        // V6.1: แก้ไข speakAnswer ให้ใช้ Fixed Delay แทน onend
         function speakAnswer(englishWord, thaiMeaning) {
+            
             const isLastQuestion = currentQuizIndex + 1 >= currentLevelData.questions.length;
 
-            const onThaiSpeakEnd = () => {
-                 utterance.onend = null; 
-                 if (isAutoPlayMode && !isLastQuestion) {
-                      // Check pause state again inside callback
-                      if (pauseBtn.style.display !== 'none') {
-                          currentQuizIndex++;
-                          nextQuestion();
-                      }
-                 } else if (isAutoPlayMode && isLastQuestion) {
-                      endGame();
-                 } else {
-                      nextQBtn.style.display = 'block';
-                 }
+            const onSpeakEndCleanup = () => {
+                 if(utterance) utterance.onend = null;
             };
-            
+
             const onEnglishSpeakEnd = () => {
-                 speak(thaiMeaning, 'th-TH', onThaiSpeakEnd);
+                 speak(thaiMeaning, 'th-TH', onSpeakEndCleanup);
             };
 
             speak(englishWord, 'en-US', onEnglishSpeakEnd);
             
-            // Guaranteed flow transition fallback
+            // Guaranteed flow transition using setTimeout
             if (isAutoPlayMode) {
                  clearTimeout(autoNextQTransitionTimeout);
+                 
+                 // ตั้งเวลาหน่วง 5.5 วินาที เพื่อให้มีเวลาอ่านพอสมควร แล้วไปข้อถัดไป
                  autoNextQTransitionTimeout = setTimeout(() => {
-                      if (isAnswered) { // Ensure still answered state
+                      if (isAnswered && !isPaused) { // Check isPaused state here too
                           if (!isLastQuestion) {
-                              if (pauseBtn.style.display !== 'none' && pausedControlsEl.style.display === 'none') {
-                                  currentQuizIndex++;
-                                  nextQuestion(); 
-                              }
+                              currentQuizIndex++;
+                              nextQuestion(); 
                           } else {
                               endGame();
                           }
                       }
-                 }, 5500); // 5.5s safety delay
+                 }, autoNextQDelay); 
             } else {
                  nextQBtn.style.display = 'block';
             }
@@ -631,7 +632,10 @@
             scoreEl.textContent = `⭐ ${score}`;
 
             const q = currentLevelData.questions[currentQuizIndex];
-            setupQuestion(q);
+            
+            // V7.1 FIX: Call setupQuestion to ensure grid creation
+            setupQuestion(q); 
+            
             startTimer(q.timeLimit);
             
             if (isAutoPlayMode) startAutoPlay(q);
@@ -639,11 +643,15 @@
 
         function setupQuestion(q) {
             thaiPromptEl.textContent = q.thaiPrompt;
-            createGrid(q);
+            englishWordDisplayEl.textContent = ""; // Clear displayed word
+            
+            // V7.1 FIX: Ensure createGrid is called here!
+            createGrid(q, q.gridSize); 
+            
             resetGuess();
         }
 
-        function createGrid(q) {
+        function createGrid(q, gridSize) {
             gameGridEl.innerHTML = '';
             gameGridEl.style.gridTemplateColumns = `repeat(${q.gridSize}, 1fr)`;
 
@@ -666,34 +674,31 @@
             nextExpectedChar = q.correctWord.charAt(0);
             englishWordDisplayEl.textContent = "";
             
+            document.querySelectorAll('.tile').forEach(t => {
+                t.classList.remove('selected', 'correct');
+                t.style.opacity = '1';
+            });
+            
             messageAreaEl.textContent = `สะกดคำตามลำดับ... (เริ่มที่ ${nextExpectedChar})`;
             messageAreaEl.style.color = '#718096';
         }
 
         function handleTileClick(tileEl, char, order) {
-            if (isAutoPlayMode) return; // Disable manual click in auto mode
-            processInput(tileEl, char, order);
-        }
-
-        function processInput(tileEl, char, order) {
+            if (isAutoPlayMode) return; 
             if (!isGameActive || isAnswered || tileEl.classList.contains('selected') || isPaused) return;
 
             if (char === nextExpectedChar) {
-                // Correct letter
                 currentGuessWord += char;
                 tileEl.classList.add('selected');
                 englishWordDisplayEl.textContent = currentGuessWord;
                 checkFlow();
             } else {
-                // Wrong letter
                 messageAreaEl.textContent = `❌ ผิด! ต้องกด '${nextExpectedChar}'`;
                 messageAreaEl.style.color = 'var(--error)';
                 
-                // Shake effect
                 tileEl.style.transform = 'translateX(5px)';
                 setTimeout(() => tileEl.style.transform = 'none', 200);
                 
-                // Reset text after 1s
                 setTimeout(() => {
                     if(!isAnswered) {
                         messageAreaEl.textContent = `สะกดคำตามลำดับ... (เริ่มที่ ${nextExpectedChar})`;
@@ -709,7 +714,6 @@
             if (currentGuessWord.length < q.correctWord.length) {
                 nextExpectedChar = q.correctWord.charAt(currentGuessWord.length);
             } else {
-                // Word Complete
                 isAnswered = true;
                 score++;
                 successEffect();
@@ -739,37 +743,37 @@
         }
 
         function highlightAll(isSuccess) {
-            const tiles = document.querySelectorAll('.tile');
-            // Assuming order is mapped via index in logic, but DOM doesn't have order attr. 
-            // Simple visual fix: highlight selected ones green
-            tiles.forEach(t => {
+            document.querySelectorAll('.tile').forEach(t => {
                 if (t.classList.contains('selected')) t.classList.add('correct');
             });
         }
 
         function endQuestion() {
             stopTimer();
-            // Call speech
             const q = currentLevelData.questions[currentQuizIndex];
             speakAnswer(q.correctWord, q.thaiPrompt);
         }
 
         function endGame() {
             stopTimer();
-            pauseBtn.style.display = 'none';
-            pausedControlsEl.style.display = 'none';
-            endLevelControlsEl.style.display = 'flex'; // Show replay/menu
-            nextQBtn.style.display = 'none';
+            document.getElementById('pause-btn').style.display = 'none';
+            document.getElementById('paused-controls').style.display = 'none';
+            document.getElementById('end-level-controls').style.display = 'flex';
+            document.getElementById('next-q-btn').style.display = 'none';
             messageAreaEl.textContent = "จบด่านแล้ว! 🎉";
         }
 
-        // --- TIMERS ---
+        // --- TIMERS / CONTROLS ---
         function startTimer(duration) {
             clearInterval(timerInterval);
             totalTime = duration;
             timeRemaining = duration;
             isGameActive = true;
             updateTimerBar();
+            
+            pauseBtn.style.display = 'block';
+            if (isAutoPlayMode) pauseBtn.style.display = 'block'; // Always show pause in V6.3+
+
             timerInterval = setInterval(() => {
                 timeRemaining -= 0.1;
                 updateTimerBar();
@@ -790,21 +794,20 @@
         function stopTimer() { clearInterval(timerInterval); isGameActive = false; }
 
         function pauseGame() {
-            if (!isGameActive || isAnswered) return;
+            if (!isGameActive || isAnswered || isPaused) return;
             stopTimer();
+            clearAutoPlay();
+            clearTimeout(autoNextQTransitionTimeout); // Ensure auto-advance stops
             isGameActive = false; isPaused = true;
             window.speechSynthesis.cancel();
-            clearAutoPlay();
-            clearTimeout(autoNextQTransitionTimeout);
-            pauseBtn.style.display = 'none';
-            pausedControlsEl.style.display = 'flex';
+            
+            document.getElementById('pause-btn').style.display = 'none';
+            document.getElementById('paused-controls').style.display = 'flex';
         }
 
         function resumeGame() {
-            startTimer(timeRemaining); // Actually needs to NOT reset time, simplified here
+            startTimer(timeRemaining, true); // Re-start timer without resetting time
             isPaused = false;
-            pauseBtn.style.display = 'block';
-            pausedControlsEl.style.display = 'none';
             if (isAutoPlayMode) {
                 const q = currentLevelData.questions[currentQuizIndex];
                 startAutoPlay(q, true);
@@ -816,6 +819,8 @@
             stopTimer();
             clearAutoPlay();
             clearTimeout(autoNextQTransitionTimeout);
+            
+            currentLevelData = null;
             showScreen('level-select-screen');
         }
 
@@ -835,52 +840,43 @@
             if (!isAutoPlayMode) return;
             
             const correctWord = q.correctWord;
-            // Need to find tiles. Simple simulation:
             const tileElements = Array.from(document.querySelectorAll('.tile'));
-            // We stored tileIndex in data objects but not in DOM directly in createGrid. 
-            // Fix: Re-map tiles based on logic.
-            // Actually, `generateTiles` assigns order. We need to find the tile with specific char AND specific order.
-            
-            // Re-find the tile element based on logic
-            const tilesData = q.tiles; // Contains {char, order, tileIndex}
+            const tilesData = q.tiles; 
             
             let spellIndex = currentGuessWord.length;
 
             const spellNext = () => {
                 if (spellIndex >= correctWord.length || isAnswered || isPaused) return;
 
-                // Find tile data for current letter index (e.g. 1st letter -> order 1)
                 const targetTileData = tilesData.find(t => t.order === spellIndex + 1);
                 
                 if (targetTileData) {
                     const targetEl = tileElements[targetTileData.tileIndex];
                     if (targetEl && !targetEl.classList.contains('selected')) {
-                        // Simulate visual click
-                        targetEl.classList.add('selected');
+                        // Simulate click/input processing
                         currentGuessWord += targetTileData.char;
+                        targetEl.classList.add('selected');
                         englishWordDisplayEl.textContent = currentGuessWord;
-                        
                         checkFlow();
                     }
                 }
                 
                 spellIndex++;
                 if (!isAnswered) {
-                    // Random delay 0.8 - 1.0s
-                    const delay = Math.random() * 200 + 800;
+                    const delay = Math.random() * 200 + 800; // 0.8 - 1.0s
                     autoPlayTimeout = setTimeout(spellNext, delay);
                 }
             };
 
-            const startDelay = isResuming ? 100 : 1000;
-            autoPlayTimeout = setTimeout(spellNext, startDelay);
+            const delay = isResuming ? 100 : Math.random() * 200 + 800;
+            autoPlayTimeout = setTimeout(spellNext, delay);
         }
 
         // --- INIT ---
         document.addEventListener('DOMContentLoaded', () => {
             setupSpeech();
             createLevelButtons();
-            showScreen('level-select-screen');
+            showScreen('level-select-screen'); // Show Level Select initially
 
             // Events
             document.getElementById('game-title').ondblclick = toggleAutoPlayMode;
